@@ -1,128 +1,85 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
-// Base de données des critères officiels DondeSang.be pour la recherche médicale
-const CRITERES_MEDICAUX = [
-  { id: "C1", nom: "Insuline / Diabète insulinodépendant", categorie: "Médicaments", type: "DEFINITIF", note: "Contre-indication définitive au don de sang total et de composants sanguins." },
-  { id: "C2", nom: "Chimiothérapie anti-cancéreuse", categorie: "Médicaments", type: "DEFINITIF", note: "Contre-indication définitive. Ajournement à vie suite à une pathologie maligne sous-jacente." },
-  { id: "C3", nom: "Acitrétine (Neotigason) / Étrétinate (Tegison)", categorie: "Médicaments", type: "TEMPORAIRE", delai: "3 ans", note: "Risque tératogène élevé. L'écartement commence après la dernière prise." },
-  { id: "C4", nom: "Léflunomide (Arava) / Tériflunomide (Aubagio)", categorie: "Médicaments", type: "TEMPORAIRE", delai: "2 ans", note: "Élimination extrêmement lente de la molécule. Risque de tératogénicité." },
-  { id: "C5", nom: "Dutastéride (Avodart, Combodart)", categorie: "Médicaments", type: "TEMPORAIRE", delai: "6 mois", note: "Traitement de l'hypertrophie bénigne de la prostate. Effets tératogènes." },
-  { id: "C6", nom: "Méthotrexate (Metoject, Ledertrexate)", categorie: "Médicaments", type: "TEMPORAIRE", delai: "6 mois", note: "Utilisé pour les maladies auto-immunes ou rhumatismes. Attention aux pathologies sous-jacentes." },
-  { id: "C7", nom: "Isotrétinoïne (Roaccutane, Isosupra, Isocural)", categorie: "Médicaments", type: "TEMPORAIRE", delai: "1 mois (30 jours)", note: "Traitement de l'acné sévère. Hautement tératogène. Vérifier la date de dernière prise." },
-  { id: "C8", nom: "Anticoagulants oraux (Xarelto, Eliquis, Pradaxa)", categorie: "Médicaments", type: "TEMPORAIRE", delai: "1 à 6 mois", note: "Écartement variable selon la gravité de la thrombose veineuse (superficielle ou profonde)." },
-  { id: "C9", nom: "Asaflow / Aspirine / Anti-inflammatoires", categorie: "Médicaments", type: "PLAQUETTES", delai: "3 à 5 jours", note: "Contre-indication UNIQUE pour le don de plaquettes. Le don de sang total reste autorisé." },
-  { id: "C10", nom: "Tatouage / Piercing / Maquillage permanent", categorie: "Interventions", type: "TEMPORAIRE", delai: "4 mois", note: "Délai de sécurité critique lié au risque d'infections transmissibles par le sang." },
-  { id: "C11", nom: "Soins dentaires / Détartrage", categorie: "Alertes récentes", type: "TEMPORAIRE", delai: "7 jours", note: "Délai nécessaire suite au risque de bactériémie transitoire après manipulation bucco-dentaire." },
-  { id: "C12", nom: "Voyage en dehors de la Belgique", categorie: "Voyages", type: "TEMPORAIRE", delai: "6 mois", note: "Vérifier les zones endémiques (ex: Paludisme, Virus du Nil Occidental) selon le protocole de voyage." }
+const MANUELS = [
+  {
+    id: 'charleroi',
+    titre: 'Manuel de sélection médicale des donneurs — ETS Charleroi',
+    texte: `DOCUMENT 1 — MANUEL DE SÉLECTION MÉDICALE DES DONNEURS (ETS CHARLEROI)
+
+PREAMBULE
+Ce manuel est destiné aux personnes formées et habilitées au poste de « Sélection Médicale des Donneurs » de l’ETS La Transfusion du Sang de Charleroi, dont la procédure est décrite dans MED-SEM-SO-010. L’expression « Médecin habilité au poste de sélection médicale » désigne le médecin ayant suivi la formation spécifique à l’évaluation médicale des donneurs. L’expression générale « Personnel qualifié habilité à la sélection médicale » englobe à la fois ce médecin habilité et les autres professionnels de santé autorisés et formés à ce poste (infirmiers, sage-femmes, dentistes, psychologues et ergothérapeutes). Ce manuel est basé sur la loi du 05/07/1994, l’arrêté Royal du 04/04/1996 et les bonnes pratiques. À la fin de l’entretien médical, le personnel habilité décide si le donneur est éligible, temporairement ou définitivement écarté, ou si seuls des échantillons sont prélevés. Les listes de pays à risques infectieux et de médicaments sont référencées respectivement par MED-SEM-LI-02A et MED-SEM-LI-01G.
+
+CRITERES GENERAUX D’ACCEPTATION (ÉLIGIBILITE)
+Codes ETS : STHO — Sang total homologue ; PLAS — Plasma ; PQPL — Plaquettes.
+Tout donneur doit être informé que le don est bénévole et volontaire, fournir son consentement éclairé, que le don dirigé est interdit par la Loi et que le don est anonyme.
+
+ÂGE
+Le don de sang est autorisé à partir de 18 ans. Un premier don ne peut s’effectuer que jusqu’à la veille du 66ème anniversaire. Les donneurs réguliers peuvent être prolongés après 66 ans si leur dernier don ne remonte pas à plus de 3 ans et si leur état de santé est satisfaisant. Le système EdgeBlood ajoute l’antécédent 0AGE lorsque ces critères ne sont pas respectés. Don de cellules souches hématopoïétiques : inscription de 18 à 39 ans inclus (40 ans non inclus) ; don de 18 à 60 ans.
+
+POIDS
+Le poids minimum légal est de 50 kg. Chez la femme, une femme de 50 kg doit mesurer minimum 1m53 pour être éligible selon l’abaque poids/taille et le volume sanguin total. Chez l’homme, 450 ml peuvent être prélevés si la taille est >= 1m50 et 420 ml si la taille est <= 1m50. Un prélèvement inférieur peut être choisi en cas de stress, anxiété, tension artérielle faible ou régime.
+
+SANG TOTAL (STHO)
+Un don est accepté si l’hémoglobine du dernier don datant de moins de 3 ans est >= 12,5 g/dl pour les femmes et >= 13,5 g/dl pour les hommes. Fréquence maximale : 4 fois par an. Délai entre deux dons : 2 mois minimum ; EdgeBlood rend le donneur inéligible pendant 62 jours. Le volume ne peut dépasser 500 ml, et reste inférieur à 32 ml/kg par an et à 13 % du volume sanguin total estimé ; les prélèvements sont paramétrés à 420 ou 450 ml.
+
+PLASMA ET PLAQUETTES EN APHERESE
+Le premier don de plasma ou de plaquettes est accepté si le donneur a déjà fait un don de STHO. Les protéines totales sont contrôlées chaque année et doivent être entre 60 et 100 g/l. Les plaquettes doivent être entre 100 et 450 µl sans signe clinique associé (hématome, ecchymose ou saignement). Les dons sont techniquement impossibles jusqu’à normalisation du taux. Références : LAB-GEN-SO-04M et LAB-GEN-LI-04M.
+
+QUESTIONS D’ELIGIBILITE
+Q1 à Q47 : les questions et réponses doivent être consultées dans la version réglementaire validée du manuel avant toute décision clinique.`,
+  },
+  {
+    id: 'medicaments',
+    titre: 'Liste médicaments et contre-indications aux dons de PSL — DonDeSang.be',
+    texte: `DOCUMENT 2 — LISTE DES MÉDICAMENTS ET DURÉES D’EXCLUSION
+
+Aspirine / Asaflow : exclusion du don de plaquettes pendant 3 jours après la prise. Les durées d’exclusion doivent être appliquées selon la version réglementaire validée de DonDeSang.be et confirmées par le personnel habilité.`,
+  },
+  {
+    id: 'pays',
+    titre: 'Pays à risques infectieux et délais d’écartement',
+    texte: `DOCUMENT 3 — GRILLE DES PAYS
+
+La grille exhaustive des pays et les délais d’écartement pour le paludisme, la maladie de Chagas et le virus West Nile doivent être importés depuis la version réglementaire validée MED-SEM-LI-02A. Ne pas déduire un délai à partir de cette interface : la décision relève du personnel médical habilité.`,
+  },
 ];
 
-const QUESTIONS_ELIGIBILITE = [
-  { id: 1, texte: "Avez-vous entre 18 et 70 ans ?", reponseRequise: "oui", messageErreur: "Pour donner votre sang, vous devez être majeur et avoir moins de 71 ans." },
-  { id: 2, texte: "Pesez-vous au moins 50 kg ?", reponseRequise: "oui", messageErreur: "Le don de sang standard requiert un poids minimal de 50 kg pour votre sécurité." },
-  { id: 3, texte: "Avez-vous mangé ou bu de l'eau au cours des dernières heures ?", reponseRequise: "oui", messageErreur: "Il est fortement déconseillé de donner son sang à jeun. Veuillez vous restaurer avant le don." },
-  { id: 4, texte: "Avez-vous eu de la fièvre, des frissons ou été malade ces 2 dernières semaines ?", reponseRequise: "non", messageErreur: "Un délai d'attente est nécessaire après un épisode infectieux pour protéger les receveurs." }
-];
+const normaliser = (s) => s.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+const echapper = (s) => s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
 
-export default function NouSangoDashboard() {
-  const [ongletActif, setOngletActif] = useState("medecin");
-  const [rechercheCritere, setRechercheCritere] = useState("");
-  
-  // États pour le test donneur simplifié
-  const [etapeDonneur, setEtapeDonneur] = useState(0);
-  const [resultatDonneur, setResultatDonneur] = useState(null);
+function Surligner({ texte, terme }) {
+  if (!terme) return <>{texte}</>;
+  return texte.split(new RegExp(`(${echapper(terme)})`, 'ig')).map((partie, i) => normaliser(partie) === normaliser(terme) ? <mark key={i}>{partie}</mark> : <React.Fragment key={i}>{partie}</React.Fragment>);
+}
 
-  // États pour la création de profils médecins
-  const [medecins, setMedecins] = useState([
-    { id: "MED-01", nom: "Martin", prenom: "Pierre", specialite: "Hématologue", identifiant: "1870942" },
-    { id: "MED-02", nom: "Dubois", prenom: "Sophie", specialite: "Généraliste / Collecte", identifiant: "1954321" }
-  ]);
-  const [nouveauMedecin, setNouveauMedecin] = useState({ nom: "", prenom: "", specialite: "Hématologue", identifiant: "" });
-
-  // Filtrage dynamique des critères médicaux pour la console médecin
-  const criteresFiltrés = useMemo(() => {
-    const terme = rechercheCritere.toLowerCase().trim();
+export default function SanPassDashboard() {
+  const [recherche, setRecherche] = useState('');
+  const [filtre, setFiltre] = useState('tous');
+  const resultats = useMemo(() => {
+    const terme = normaliser(recherche.trim());
     if (!terme) return [];
-    return CRITERES_MEDICAUX.filter(c => 
-      c.nom.toLowerCase().includes(terme) || 
-      c.categorie.toLowerCase().includes(terme) ||
-      c.note.toLowerCase().includes(terme)
-    );
-  }, [rechercheCritere]);
+    return MANUELS.flatMap((manuel) => manuel.texte.split(/\\n\\s*\\n/).map((texte, index) => ({ manuel, texte, index })))
+      .filter(({ manuel, texte }) => (filtre === 'tous' || manuel.id === filtre) && normaliser(texte).includes(terme));
+  }, [recherche, filtre]);
 
-  const ajouterProfilMedecin = (e) => {
-    e.preventDefault();
-    if (!nouveauMedecin.nom || !nouveauMedecin.prenom || !nouveauMedecin.identifiant) return;
-    
-    const med = {
-      id: `MED-${Date.now().toString().slice(-2)}`,
-      ...nouveauMedecin
-    };
-    setMedecins([...medecins, med]);
-    setNouveauMedecin({ nom: "", prenom: "", specialite: "Hématologue", identifiant: "" });
-  };
-
-  const gererReponseDonneur = (choix) => {
-    const questionActuelle = QUESTIONS_ELIGIBILITE[etapeDonneur];
-    if (choix !== questionActuelle.reponseRequise) {
-      setResultatDonneur({ eligible: false, raison: questionActuelle.messageErreur });
-      return;
-    }
-    if (etapeDonneur < QUESTIONS_ELIGIBILITE.length - 1) {
-      setEtapeDonneur(etapeDonneur + 1);
-    } else {
-      setResultatDonneur({ eligible: true, raison: "Félicitations ! Vous semblez éligible au don de sang d'après ce premier test." });
-    }
-  };
-
-  return (
-    <div style={{ maxWidth: '1000px', margin: '30px auto', padding: '0 20px', fontFamily: 'system-ui, sans-serif' }}>
-      <header style={{ borderBottom: '3px solid #dc3545', paddingBottom: '12px', marginBottom: '25px' }}>
-        <h1 style={{ margin: 0, color: '#dc3545', fontSize: '28px' }}>🩸 Nou SanGO</h1>
-        <p style={{ margin: '4px 0 0 0', color: '#6c757d', fontSize: '14px' }}>L'écosystème connecté de l'éligibilité transfusionnelle</p>
-      </header>
-
-      {/* Barre d'onglets principale */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '25px', borderBottom: '1px solid #dee2e6', paddingBottom: '10px', flexWrap: 'wrap' }}>
-        <button 
-          onClick={() => setOngletActif("medecin")}
-          style={{ padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', backgroundColor: ongletActif === "medecin" ? "#dc3545" : "#e9ecef", color: ongletActif === "medecin" ? "#fff" : "#495057" }}
-        >
-          🎛️ Espace Administration & Médecins
-        </button>
-        <button 
-          onClick={() => setOngletActif("console")}
-          style={{ padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', backgroundColor: ongletActif === "console" ? "#dc3545" : "#e9ecef", color: ongletActif === "console" ? "#fff" : "#495057" }}
-        >
-          🔎 Console de Recherche Médicale (Staff)
-        </button>
-        <button 
-          onClick={() => setOngletActif("donneur")}
-          style={{ padding: '10px 20px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', backgroundColor: ongletActif === "donneur" ? "#dc3545" : "#e9ecef", color: ongletActif === "donneur" ? "#fff" : "#495057" }}
-        >
-          📋 Test Éligibilité (Donneurs)
-        </button>
+  return <main style={{ maxWidth: 1100, margin: '32px auto', padding: '0 20px', fontFamily: 'system-ui, sans-serif' }}>
+    <header style={{ borderBottom: '3px solid #dc3545', paddingBottom: 14, marginBottom: 24 }}>
+      <h1 style={{ color: '#dc3545', margin: 0 }}>🩸 SanPass</h1>
+      <p>L’écosystème connecté de l’éligibilité transfusionnelle</p>
+    </header>
+    <section>
+      <h2>Console Médicale</h2>
+      <p>Recherche plein texte dans les paragraphes des manuels indexés ; les occurrences sont surlignées dans le paragraphe exact.</p>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher hémoglobine, 50 kg, Asaflow, paludisme…" style={{ flex: 1, minWidth: 280, padding: 11 }} />
+        <select value={filtre} onChange={(e) => setFiltre(e.target.value)} style={{ padding: 11 }}><option value="tous">Tous les documents</option>{MANUELS.map((m) => <option key={m.id} value={m.id}>{m.titre}</option>)}</select>
       </div>
-
-      {/* CONTENU : ESPACE ADMINISTRATION MÉDECIN */}
-      {ongletActif === "medecin" && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px' }}>
-          {/* Formulaire */}
-          <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #dee2e6' }}>
-            <h3 style={{ marginTop: 0, color: '#212529', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>Créer un profil Médecin</h3>
-            <form onSubmit={ajouterProfilMedecin} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '15px' }}>
-              <input type="text" placeholder="Nom" value={nouveauMedecin.nom} onChange={e => setNouveauMedecin({...nouveauMedecin, nom: e.target.value})} style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ced4da' }} required />
-              <input type="text" placeholder="Prénom" value={nouveauMedecin.prenom} onChange={e => setNouveauMedecin({...nouveauMedecin, prenom: e.target.value})} style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ced4da' }} required />
-              <input type="text" placeholder="Identifiant Médical / INAMI" value={nouveauMedecin.identifiant} onChange={e => setNouveauMedecin({...nouveauMedecin, identifiant: e.target.value})} style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ced4da' }} required />
-              <select value={nouveauMedecin.specialite} onChange={e => setNouveauMedecin({...nouveauMedecin, specialite: e.target.value})} style={{ padding: '10px', borderRadius: '4px', border: '1px solid #ced4da' }}>
-                <option value="Hématologue">Hématologue</option>
-                <option value="Généraliste / Collecte">Généraliste / Collecte</option>
-                <option value="Médecin Responsable">Médecin Responsable</option>
-              </select>
-              <button type="submit" style={{ padding: '12px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Enregistrer le Médecin</button>
-            </form>
-          </div>
-
-          {/* Liste */}
-          <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+      {recherche.trim() && <p><strong>{resultats.length}</strong> paragraphe(s) trouvé(s).</p>}
+      {resultats.map(({ manuel, texte, index }) => <article key={`${manuel.id}-${index}`} style={{ marginTop: 14, padding: 18, border: '1px solid #dee2e6', borderRadius: 8 }}><small>{manuel.titre}</small><p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}><Surligner texte={texte} terme={recherche.trim()} /></p></article>)}
+      {recherche.trim() && !resultats.length && <p>Aucun paragraphe correspondant.</p>}
+    </section>
+    <footer style={{ marginTop: 30, color: '#6c757d' }}>SanPass — outil de consultation. Toute décision clinique doit être prise par un professionnel habilité sur la base des versions réglementaires validées.</footer>
+  </main>;
+}
