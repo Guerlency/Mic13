@@ -6,52 +6,63 @@ const MANUELS = [
   {
     id: 'charleroi',
     titre: 'Manuel de sélection médicale des donneurs — ETS Charleroi',
-    texte: `DOCUMENT 1 — MANUEL DE SÉLECTION MÉDICALE DES DONNEURS (ETS CHARLEROI)
+    texte: `DOCUMENT 1 — QUESTIONS DE SÉLECTION (EXTRAIT FOURNI)
 
-PREAMBULE
-Ce manuel est destiné aux personnes formées et habilitées au poste de « Sélection Médicale des Donneurs » de l’ETS La Transfusion du Sang de Charleroi, dont la procédure est décrite dans MED-SEM-SO-010. L’expression « Médecin habilité au poste de sélection médicale » désigne le médecin ayant suivi la formation spécifique à l’évaluation médicale des donneurs. L’expression générale « Personnel qualifié habilité à la sélection médicale » englobe à la fois ce médecin habilité et les autres professionnels de santé autorisés et formés à ce poste (infirmiers, sage-femmes, dentistes, psychologues et ergothérapeutes). Ce manuel est basé sur la loi du 05/07/1994, l’arrêté Royal du 04/04/1996 et les bonnes pratiques. À la fin de l’entretien médical, le personnel habilité décide si le donneur est éligible, temporairement ou définitivement écarté, ou si seuls des échantillons sont prélevés. Les listes de pays à risques infectieux et de médicaments sont référencées respectivement par MED-SEM-LI-02A et MED-SEM-LI-01G.
+Q1: Transfusé au cours de votre vie? (Ajournement temporaire ou définitif selon ligne)
+Q2: Reçu une greffe/allogreffe au cours de votre vie? (Définitif si SNC, cornée, dure-mère, organes)
+Q3: Subi une opération lourde du cerveau ou de la moelle épinière? (Définitif - Prions)
+Q4: Subi une opération lourde du cœur? (Définitif - Protection donneur)
+Q5: Troubles cardiaques sévères ou cardiopathie symptomatique? (Définitif)
+Q6: Diabète sous insuline / insulinodépendant? (Définitif)
+Q8: Cancer, pathologie maligne ou maladie du sang (Leucémie, Lymphome)? (Définitif)
+Q9: Hémochromatose? (Autorisé sous protocole MED-SEM-FO-04A/B, max 6x/an)
+Q10: Troubles neurologiques ou psychiatriques sévères? (Définitif - Consentement non fiable)
+Q15: Pris des hormones de croissance humaines avant 1989? (Définitif - Maladie de Creutzfeldt-Jakob)
+Q18: Consommé de la drogue par voie nasale (snif) les 12 derniers mois? (Ajournement 12 mois)
+Q20: Reçu un vaccin ou débuté une désensibilisation ce mois-ci? (Inactivé: OK, Atténué: 4 semaines, Covid avec symptômes: 7 jours)
+Q22: Hospitalisé ou opéré au cours des 4 derniers mois? (Ajournement 4 mois)
+Q24: Fait un tatouage, piercing, maquillage permanent ou dé-tatouage les 4 derniers mois? (Ajournement 4 mois)
+Q25: Reçu des soins d'acupuncture par un non-médecin ou avec aiguilles réutilisables les 4 derniers mois? (Ajournement 4 mois)
+Q28: Perdu plus de 5 kg sans raison récemment (perte de poids inexpliquée)? (Écartement temporaire, bilan requis)
+Q29: Eu la grippe ou un état fébrile > 38° au cours des 2 dernières semaines? (Ajournement 2 semaines)
+Q30: Allé chez le dentiste au cours des 7 derniers jours (Détartrage, extraction)? (Ajournement 7 jours pour soins majeurs, 24h pour carie)
+Q32: Été mordu par une tique ce mois-ci? (Ajournement 3 mois si érythème migrant, 30 jours si morsure < 15 jours)
+Q35: Séjourné plus de 6 mois cumulés au Royaume-Uni entre 1980 et 1996? (Définitif - Variante de la maladie de Creutzfeldt-Jakob)
+Q36: Voyagé ou séjourné en dehors de la Belgique (minimum 48h) au cours des 6 derniers mois? (Délai selon zone: Malaria 4 mois, Chagas 6 mois/28j, Zika 28j)
+Q37: Nouveau partenaire sexuel ou partenaire occasionnel au cours des 4 derniers mois? (Ajournement 4 mois)
+Q38: Rapport sexuel avec une personne touchée par une IST (Syphilis, Gonococcie, Chlamydia)? (Ajournement 4 mois)
+Q41: Rapports sexuels tarifés (échange d'argent/biens/services) les 12 derniers mois? (Ajournement 12 mois)
+Q42: Partenaires sexuels multiples sur une même période au cours des 12 derniers mois? (Ajournement 12 mois)
+Q43: Participation à du sexe en groupe au cours des 12 derniers mois? (Ajournement 12 mois)
+Q45: Pour les femmes, accouché au cours des 6 derniers mois ou allaitement en cours? (Ajournement 6 mois après accouchement, temporaire si allaitement exclusif)
+Q46: Pour les femmes, fait une fausse couche ou une IVG au cours des 6 derniers mois? (Ajournement 6 mois)
+Q47: Pour les femmes, rapport sexuel avec un homme qui a des rapports sexuels avec des hommes (HSH)? (Ajournement 4 mois)
 
-CRITERES GENERAUX D’ACCEPTATION (ÉLIGIBILITE)
-Codes ETS : STHO — Sang total homologue ; PLAS — Plasma ; PQPL — Plaquettes.
-Tout donneur doit être informé que le don est bénévole et volontaire, fournir son consentement éclairé, que le don dirigé est interdit par la Loi et que le don est anonyme.
-
-ÂGE
-Le don de sang est autorisé à partir de 18 ans. Un premier don ne peut s’effectuer que jusqu’à la veille du 66ème anniversaire. Les donneurs réguliers peuvent être prolongés après 66 ans si leur dernier don ne remonte pas à plus de 3 ans et si leur état de santé est satisfaisant. Le système EdgeBlood ajoute l’antécédent 0AGE lorsque ces critères ne sont pas respectés. Don de cellules souches hématopoïétiques : inscription de 18 à 39 ans inclus (40 ans non inclus) ; don de 18 à 60 ans.
-
-POIDS
-Le poids minimum légal est de 50 kg. Chez la femme, une femme de 50 kg doit mesurer minimum 1m53 pour être éligible selon l’abaque poids/taille et le volume sanguin total. Chez l’homme, 450 ml peuvent être prélevés si la taille est >= 1m50 et 420 ml si la taille est <= 1m50. Un prélèvement inférieur peut être choisi en cas de stress, anxiété, tension artérielle faible ou régime.
-
-SANG TOTAL (STHO)
-Un don est accepté si l’hémoglobine du dernier don datant de moins de 3 ans est >= 12,5 g/dl pour les femmes et >= 13,5 g/dl pour les hommes. Fréquence maximale : 4 fois par an. Délai entre deux dons : 2 mois minimum ; EdgeBlood rend le donneur inéligible pendant 62 jours. Le volume ne peut dépasser 500 ml, et reste inférieur à 32 ml/kg par an et à 13 % du volume sanguin total estimé ; les prélèvements sont paramétrés à 420 ou 450 ml.
-
-PLASMA ET PLAQUETTES EN APHERESE
-Le premier don de plasma ou de plaquettes est accepté si le donneur a déjà fait un don de STHO. Les protéines totales sont contrôlées chaque année et doivent être entre 60 et 100 g/l. Les plaquettes doivent être entre 100 et 450 µl sans signe clinique associé (hématome, ecchymose ou saignement). Les dons sont techniquement impossibles jusqu’à normalisation du taux. Références : LAB-GEN-SO-04M et LAB-GEN-LI-04M.
-
-QUESTIONS D’ELIGIBILITE
-Q1 à Q47 : les questions et réponses doivent être consultées dans la version réglementaire validée du manuel avant toute décision clinique.`,
+CRITÈRES GÉNÉRAUX
+Âge minimum: 18 ans. Premier don jusqu'à la veille du 66ème anniversaire. Poids minimum légal: 50 kg. Hémoglobine STHO: >= 12,5 g/dl pour les femmes et >= 13,5 g/dl pour les hommes. Délai entre deux dons de sang total: 2 mois minimum, paramétré à 62 jours.`,
   },
   {
     id: 'medicaments',
-    titre: 'Liste médicaments et contre-indications aux dons de PSL — DonDeSang.be',
-    texte: `DOCUMENT 2 — LISTE DES MÉDICAMENTS ET DURÉES D’EXCLUSION
+    titre: 'Liste complète des médicaments et durées d’exclusion — DonDeSang.be',
+    texte: `DOCUMENT 2 — MÉDICAMENTS ET CONTRE-INDICATIONS
 
-Aspirine / Asaflow : exclusion du don de plaquettes pendant 3 jours après la prise. Les durées d’exclusion doivent être appliquées selon la version réglementaire validée de DonDeSang.be et confirmées par le personnel habilité.`,
+Les délais commencent le jour suivant la dernière dose. Contre-indication au don de plaquettes pendant 3 jours pour Asaflow, Aspirine, Cardio-aspirine, Anti-inflammatoires non stéroïdiens (AINS) systémiques. Exclusion définitive pour Insuline, Chimiothérapie antitumorale, Hormone de croissance humaine avant 1989. Exclusion de 3 ans pour Acitrétine (Neotigason), Étrétinate (Tegison) et antiépileptiques prescrits pour épilepsie (Acide valproïque/Dépakine, carbamazépine/Tegretol, topiramate/Topamax). Exclusion de 2 ans pour Léflunomide (Arava), Tériflunomide (Aubagio) et Rituximab. Exclusion de 6 mois pour Dutastéride (Avodart, Combodart, Prostatex), Méthotrexate, Azathioprine (Imuran, Imurel), Ciclosporine (Néoral, Sandimmun), Tacrolimus (Prograf), Sirolimus, Évérolimus, Mycophénolate mofétil (CellCept) et Anticorps monoclonaux (Aimovig, Repatha, Humira). Exclusion de 3 mois pour Hydroxychloroquine (Plaquenil) et Clomifène (Clomid). Exclusion de 1 mois pour Isotrétinoïne (Roaccutane, Isosupra, Isocural), Finastéride (Proscar, Propecia), Lithium, Camcolit, Maniprex, Priadel, Strumazol, Thyrozol. Exclusion de 2 semaines pour Cortisone per os/injection (Jorveza, budésonide). Exclusion de 7 jours pour les Antibiotiques (guérison complète requise). Exclusion de 12h pour Vermox.`,
   },
   {
     id: 'pays',
-    titre: 'Pays à risques infectieux et délais d’écartement',
-    texte: `DOCUMENT 3 — GRILLE DES PAYS
+    titre: 'Grille géographique des pays et délais d’écartement',
+    texte: `DOCUMENT 3 — PAYS À RISQUES INFECTIEUX
 
-La grille exhaustive des pays et les délais d’écartement pour le paludisme, la maladie de Chagas et le virus West Nile doivent être importés depuis la version réglementaire validée MED-SEM-LI-02A. Ne pas déduire un délai à partir de cette interface : la décision relève du personnel médical habilité.`,
+Séjour de minimum 48 heures. Risque Chagas (Amérique Latine continentale): 6 mois si plein air/camping/habitation précaire ou durée > 3 mois; 28 jours si hôtel ou courte durée < 3 mois. Risque West Nile Virus (WNV): du 1er juillet au 30 novembre, écartement de 28 jours après le retour. Grille fixe: AFGHANISTAN, AFRIQUE DU SUD, ANGOLA, BANGLADESH, BENIN, BHOUTAN, BIRMANIE, BOTSWANA, BURKINA FASO, BURUNDI, CAMBODGE, CAMEROUN, COMORES, CONGO, COREE NORD, COREE SUD, DJIBOUTI, DOMINICAINE (Rép), EGYPTE (El Fayoum), ERYTHREE, ETHIOPIE, GABON, GAMBIE, GHANA, GUINEE, GUINEE EQUATORIALE, GUINEE BISSAU, HAITI, HAUTE-VOLTA, HAWAI, INDE, INDONESIE, IRAK, IRAN, KENYA, LAOS, LESOTHO, LIBERIA, MADAGASCAR, MALAISIE, MALAWI, MALI, MAURITANIE, MOZAMBIQUE, NAMIBIE, NEPAL, NIGER, NIGERIA, OUGANDA, PAKISTAN, PAPOUASIE, PHILIPPINES, RDC, RWANDA, SENEGAL, SIERRA LEONE, SOMALIE, SOUDAN, TANZANIE, TCHAD, THAILANDE, TOGO, TURQUIE (sud-est), VIETNAM, YEMEN, ZAMBIE, ZIMBABWE (Risque Paludisme: STHO = 4 mois, PLASMA = 28j, PLQT = 6 mois). ARGENTINE, BOLIVIE, BRESIL, COLOMBIE, COSTA RICA, EQUATEUR, GUATEMALA, GUYANE, HONDURAS, MEXIQUE, NICARAGUA, PANAMA, PARAGUAY, PEROU, SALVADOR, VENEZUELA (Risque Chagas, voir critères). ANGUILLA, BAHAMAS, BARBADE, CARAIBES, CUBA, CURACAO, GUADELOUPE, MARTINIQUE, REUNION, SAINT MARTIN, SINGAPOUR, TAHITI, TAIWAN (Risque Tropical/Zika/Dengue: 28 jours). CANADA, ETATS-UNIS, USA, RUSSIE, UKRAINE (Risque WNV: 28 jours).`,
   },
 ];
 
-const normaliser = (s) => s.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
-const echapper = (s) => s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
+const normaliser = (texte) => texte.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
+const echapperRegex = (texte) => texte.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
 
 function Surligner({ texte, terme }) {
   if (!terme) return <>{texte}</>;
-  return texte.split(new RegExp(`(${echapper(terme)})`, 'ig')).map((partie, i) => normaliser(partie) === normaliser(terme) ? <mark key={i}>{partie}</mark> : <React.Fragment key={i}>{partie}</React.Fragment>);
+  return texte.split(new RegExp(`(${echapperRegex(terme)})`, 'ig')).map((partie, index) => normaliser(partie) === normaliser(terme) ? <mark key={index}>{partie}</mark> : <React.Fragment key={index}>{partie}</React.Fragment>);
 }
 
 export default function SanPassDashboard() {
@@ -71,10 +82,10 @@ export default function SanPassDashboard() {
     </header>
     <section>
       <h2>Console Médicale</h2>
-      <p>Recherche plein texte dans les paragraphes des manuels indexés ; les occurrences sont surlignées dans le paragraphe exact.</p>
+      <p>Recherche plein texte dans les paragraphes bruts des trois documents ; les occurrences sont surlignées dans le paragraphe exact.</p>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher hémoglobine, 50 kg, Asaflow, paludisme…" style={{ flex: 1, minWidth: 280, padding: 11 }} />
-        <select value={filtre} onChange={(e) => setFiltre(e.target.value)} style={{ padding: 11 }}><option value="tous">Tous les documents</option>{MANUELS.map((m) => <option key={m.id} value={m.id}>{m.titre}</option>)}</select>
+        <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher hémoglobine, Asaflow, paludisme, Q47…" style={{ flex: 1, minWidth: 280, padding: 11 }} />
+        <select value={filtre} onChange={(e) => setFiltre(e.target.value)} style={{ padding: 11 }}><option value="tous">Tous les documents</option>{MANUELS.map((manuel) => <option key={manuel.id} value={manuel.id}>{manuel.titre}</option>)}</select>
       </div>
       {recherche.trim() && <p><strong>{resultats.length}</strong> paragraphe(s) trouvé(s).</p>}
       {resultats.map(({ manuel, texte, index }) => <article key={`${manuel.id}-${index}`} style={{ marginTop: 14, padding: 18, border: '1px solid #dee2e6', borderRadius: 8 }}><small>{manuel.titre}</small><p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}><Surligner texte={texte} terme={recherche.trim()} /></p></article>)}
