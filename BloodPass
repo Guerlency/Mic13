@@ -1,0 +1,198 @@
+import React, { useState } from 'react';
+
+// --- TYPES ET INTERFACES ---
+interface DonorProfile {
+  id: string;
+  email: string;
+  postalCode: string;
+  phone: string;
+  eligible: boolean | null;
+  formSubmitted: boolean;
+}
+
+interface MedicalDoc {
+  id: string;
+  title: string;
+  content: string;
+}
+
+export default function BloodPassApp() {
+  // Gestion de l'espace actif : 'auth' | 'donor' | 'doctor' | 'admin'
+  const [currentSpace, setCurrentSpace] = useState<string>('auth');
+  const [userRole, setUserRole] = useState<'donor' | 'doctor' | 'admin'>('donor');
+
+  // --- ÉTAT DONNEUR ---
+  const [donorData, setDonorData] = useState<DonorProfile>({
+    id: 'DON-2026',
+    email: 'guerlency@example.com',
+    postalCode: '6280',
+    phone: '0470123456',
+    eligible: null,
+    formSubmitted: false,
+  });
+  
+  // Test éligibilité rapide (Exemple : poids > 50kg, âge > 18)
+  const [age, setAge] = useState('');
+  const [weight, setWeight] = useState('');
+
+  // --- ÉTAT MÉDECIN ---
+  const [searchTerm, setSearchTerm] = useState('');
+  const [documents] = useState<MedicalDoc[]>([
+    { id: '1', title: 'Protocole Transfusionnel 2026', content: 'Le don de sang total nécessite une hémoglobine minimale. Les critères d\'exclusion temporaires incluent les voyages récents et les soins dentaires.' },
+    { id: '2', title: 'Guide d\'Éligibilité Clinique', content: 'Contre-indications permanentes : maladies cardiovasculaires graves. Les donneurs de groupe O négatif sont considérés comme donneurs universels.' },
+  ]);
+
+  // --- ÉTAT ADMINISTRATEUR ---
+  const [questions, setQuestions] = useState([
+    'Avez-vous voyagé hors d\'Europe ces 4 dernières semaines ?',
+    'Avez-vous pris des médicaments ou des antibiotiques récemment ?',
+    'Avez-vous fait un tatouage ou un piercing il y a moins de 4 mois ?'
+  ]);
+  const [newQuestion, setNewQuestion] = useState('');
+
+  // --- LOGIQUE DE RECHERCHE TEXTUELLE (MÉDECIN) ---
+  const highlightText = (text: string, highlight: string) => {
+    if (!highlight.trim()) return text;
+    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+    return (
+      <span>
+        {parts.map((part, i) => 
+          part.toLowerCase() === highlight.toLowerCase() 
+            ? <mark key={i} className="bg-yellow-300 text-black font-bold px-1 rounded">{part}</mark> 
+            : part
+        )}
+      </span>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      {/* BARRE DE NAVIGATION COMMUNE */}
+      <header className="bg-red-600 text-white p-4 shadow-md sticky top-0 flex justify-between items-center z-50">
+        <h1 className="text-2xl font-bold tracking-wider flex items-center gap-2">🩸 BloodPass</h1>
+        {currentSpace !== 'auth' && (
+          <button 
+            onClick={() => setCurrentSpace('auth')}
+            className="bg-white text-red-600 px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-red-50 transition"
+          >
+            Déconnexion
+          </button>
+        )}
+      </header>
+
+      <main className="max-w-4xl mx-auto p-4 md:p-6 pb-24">
+        
+        {/* ================= SPACE 1 : AUTHENTIFICATION & SIMULATION ================= */}
+        {currentSpace === 'auth' && (
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md mx-auto mt-10 border border-slate-100">
+            <h2 className="text-xl font-bold mb-4 text-center text-slate-900">Bienvenue sur votre portail</h2>
+            <p className="text-sm text-slate-500 mb-6 text-center">Sélectionnez un espace pour tester l'interface de démonstration :</p>
+            
+            <div className="space-y-3">
+              <button onClick={() => { setCurrentSpace('donor'); setUserRole('donor'); }} className="w-full bg-red-500 text-white p-3 rounded-xl font-medium hover:bg-red-600 transition flex items-center justify-between">
+                <span>Espace Donneur</span> <span>👤</span>
+              </button>
+              <button onClick={() => { setCurrentSpace('doctor'); setUserRole('doctor'); }} className="w-full bg-blue-600 text-white p-3 rounded-xl font-medium hover:bg-blue-700 transition flex items-center justify-between">
+                <span>Espace Médecin</span> <span>🩺</span>
+              </button>
+              <button onClick={() => { setCurrentSpace('admin'); setUserRole('admin'); }} className="w-full bg-slate-800 text-white p-3 rounded-xl font-medium hover:bg-slate-900 transition flex items-center justify-between">
+                <span>Espace Administratif</span> <span>⚙️</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= SPACE 2 : ESPACE DONNEUR ================= */}
+        {currentSpace === 'donor' && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-red-500 to-rose-600 text-white p-6 rounded-2xl shadow-lg">
+              <h2 className="text-xl font-bold">Compte Donneur Actif</h2>
+              <div className="grid grid-cols-2 gap-4 mt-4 text-sm bg-black/10 p-3 rounded-xl">
+                <p><strong>Email :</strong> {donorData.email}</p>
+                <p><strong>Code Postal :</strong> {donorData.postalCode}</p>
+                <p><strong>Téléphone :</strong> {donorData.phone}</p>
+                <p><strong>Numéro ID :</strong> {donorData.id}</p>
+              </div>
+            </div>
+
+            {/* Étape 1 : Test éligibilité physique */}
+            {donorData.eligible === null && (
+              <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
+                <h3 className="text-lg font-bold mb-3 text-slate-900">1. Test rapide d'éligibilité</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase">Âge</label>
+                    <input type="number" value={age} onChange={(e) => setAge(e.target.value)} placeholder="Ex: 25" className="w-full p-2 border rounded-lg mt-1" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase">Poids (kg)</label>
+                    <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="Ex: 62" className="w-full p-2 border rounded-lg mt-1" />
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    const isEligible = parseInt(age) >= 18 && parseInt(weight) >= 50;
+                    setDonorData({...donorData, eligible: isEligible});
+                  }}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition"
+                >
+                  Vérifier mon éligibilité
+                </button>
+              </div>
+            )}
+
+            {/* Étape 2 : Questionnaire Médical si éligible */}
+            {donorData.eligible === true && !donorData.formSubmitted && (
+              <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
+                <div className="flex items-center gap-2 text-green-600 font-bold mb-4">
+                  <span>✓</span> Éligibilité de base validée. Veuillez remplir le questionnaire médical officiel :
+                </div>
+                <div className="space-y-4">
+                  {questions.map((q, idx) => (
+                    <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                      <p className="text-sm font-medium text-slate-800 mb-2">{q}</p>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-1 text-sm"><input type="radio" name={`q-${idx}`} /> Oui</label>
+                        <label className="flex items-center gap-1 text-sm"><input type="radio" name={`q-${idx}`} /> Non</label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button 
+                  onClick={() => setDonorData({...donorData, formSubmitted: true})}
+                  className="mt-6 bg-green-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-green-700 transition"
+                >
+                  Soumettre le questionnaire médical
+                </button>
+              </div>
+            )}
+
+            {donorData.eligible === false && (
+              <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200">
+                ❌ D'après vos données de base, vous ne remplissez pas les critères minimums pour donner votre sang (Âge min: 18 ans, Poids min: 50 kg).
+              </div>
+            )}
+
+            {donorData.formSubmitted && (
+              <div className="bg-green-50 text-green-800 p-5 rounded-xl border border-green-200 text-center">
+                🎉 <strong>Questionnaire envoyé avec succès !</strong> Un médecin de l'espace transfusionnel va analyser vos réponses sous peu.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================= SPACE 3 : ESPACE MÉDECIN ================= */}
+        {currentSpace === 'doctor' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-slate-900 border-b pb-2">Espace Clinique Médical</h2>
+            
+            {/* Consultation des dossiers donneurs */}
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+              <h3 className="text-lg font-bold mb-3 text-blue-800">📋 Dossiers des Donneurs Actifs</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-600 uppercase text-xs">
+                      <th className="p-3">ID</th>
+                      <th className="p-3">Contact</th>
+                      <th className="p-3">Code Postal</th>
