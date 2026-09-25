@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import React, { useState, useMemo } from 'react';
 
@@ -20,6 +20,7 @@ export default function BloodPassApp() {
   // --- ÉTAT DU DONNEUR ---
   const [donor, setDonor] = useState({
     email: '', postalCode: '', phone: '', age: 0, weight: 0, height: 0, gender: 'F',
+    donationType: 'STHO', // STHO, PLASMA, PQPL
     eligibilityChecked: false, isGloballyEligible: true, rejectionReason: '',
     vst: 0, maxAllowedVolume: 0,
     questionnaireAnswers: {}, medicationAnswers: {}, questionnaireSubmitted: false
@@ -59,27 +60,41 @@ export default function BloodPassApp() {
     { id: "MAN-03", title: "Risques Épidémiologiques Mondiaux (Voyages)", content: "Maladie de Chagas : Amérique Latine continentale. Écartement de 6 mois si séjour en plein air (camping, belle étoile) ou habitation précaire (briques d'adobe). Paludisme/Malaria : Écartement de 4 mois pour le sang total homologue (STHO) et 6 mois pour les plaquettes." }
   ], []);
 
-  // --- LOGIQUE MORPHOLOGIQUE (FORMULE DE NADLER & LOI) ---
+  // --- CALCUL LOGIQUE ET VALIDATION PHÉNOTYPIQUE & NADLER ---
   const handlePhysicalCheck = (e) => {
     e.preventDefault();
     let eligible = true;
     let reason = "";
 
+    // 1. Limites légales d'âge et poids génériques
     if (donor.age < 18 || donor.age >= 66) {
       eligible = false;
-      reason = "L'âge légal doit être compris entre 18 ans et la veille du 66ème anniversaire pour un don homologue.";
+      reason = "L'âge légal d'admissibilité doit être compris entre 18 ans et la veille du 66ème anniversaire.";
     } else if (donor.weight < 50) {
       eligible = false;
-      reason = "Le poids minimum légal absolu exigé est de 50 kg.";
-    } else if (donor.gender === 'F' && donor.weight === 50 && donor.height < 153) {
-      eligible = false;
-      reason = "Abaque Femme : à 50 kg, la donneuse doit mesurer au moins 1m53 pour respecter le volume sanguin.";
+      reason = "Le poids corporel minimum réglementaire est de 50 kg pour tout type de don.";
     }
 
+    // 2. Critères de morphologie spécifiques (Abaque Femme - Sang Total)
+    if (eligible && donor.donationType === 'STHO' && donor.gender === 'F' && donor.weight === 50 && donor.height < 153) {
+      eligible = false;
+      reason = "Abaque Femme (Sang Total) : à 50 kg, la taille minimale requise est de 1m53 pour préserver le volume hémodynamique.";
+    }
+
+    // 3. Spécificités Don de Plasma de 765 ml (Annexe 2)
+    if (eligible && donor.donationType === 'PLASMA' && donor.gender === 'F' && donor.weight < 55) {
+      eligible = false;
+      reason = "Don de Plasma : Un poids minimal de 55 kg est impérativement requis chez la femme lors du premier prélèvement aphérèse.";
+    }
+
+    // Calcul de l'Équation de Nadler (Mesures impériales : cm -> pouces, kg -> livres)
     const heightInInches = donor.height * 0.3937;
     const weightInPounds = donor.weight * 2.2046;
     const calculatedVst = (0.006012 * Math.pow(heightInInches, 3)) + (14.6 * weightInPounds) + 604;
-    const maxVolume = calculatedVst * 0.13;
+    
+    // Règle du volume maximal : 13% du VST pour le Sang Total, 18% pour le Plasma
+    const percentage = donor.donationType === 'PLASMA' ? 0.18 : 0.13;
+    const maxVolume = calculatedVst * percentage;
 
     setDonor({
       ...donor,
@@ -90,6 +105,25 @@ export default function BloodPassApp() {
       maxAllowedVolume: Math.round(maxVolume)
     });
   };
+
+  // --- ANALYSEUR DE NIVEAU D'ALERTE POUR L'ESPACE MÉDECIN ---
+  const alertStatus = useMemo(() => {
+    // Vérification des réponses critiques du questionnaire
+    const hasCriticalQuestion = ['Q1', 'Q3', 'Q6', 'Q8'].some(q => donor.questionnaireAnswers[q] === 'OUI');
+    const hasMedicationExclusion = ['M1', 'M2', 'M3', 'M4', 'M5', 'M6'].some(m => donor.medicationAnswers[m] === 'OUI');
+    
+    if (!donor.isGloballyEligible || hasCriticalQuestion || hasMedicationExclusion) {
+      return { level: 'RED', label: "Contre-indication Majeure / Écartement requis" };
+    }
+    
+    const hasMinorWarning = ['Q18', 'Q24', 'Q29', 'Q30', 'Q32'].some(q => donor.questionnaireAnswers[q] === 'OUI') || 
+                           ['M7', 'M8', 'M9', 'M10'].some(m => donor.medicationAnswers[m] === 'OUI');
+    if (hasMinorWarning) {
+      return { level: 'ORANGE', label: "Alerte Vigilance : Écartement temporaire à fixer" };
+    }
+    
+    return { level: 'GREEN', label: "Profil Clinique Conforme" };
+  }, [donor]);
 
   const highlightMedicalText = (text, search) => {
     if (!search.trim()) return text;
@@ -116,6 +150,8 @@ export default function BloodPassApp() {
       </header>
 
       <main className="max-w-4xl mx-auto p-4 md:p-6 pb-24">
+        
+        {/* ================= ÉCRAN PORTAILS ================= */}
         {currentSpace === 'auth' && (
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md mx-auto mt-16 border border-slate-100">
             <h2 className="text-xl font-bold text-center text-slate-900 mb-2">Accès aux Espaces BloodPass</h2>
@@ -132,28 +168,3 @@ export default function BloodPassApp() {
               </button>
             </div>
           </div>
-        )}
-
-        {currentSpace === 'donor' && (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h2 className="text-lg font-bold text-slate-900 mb-4">Inscription & Caractéristiques Morphologiques</h2>
-              <form onSubmit={handlePhysicalCheck} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase">Adresse Email</label>
-                    <input required type="email" value={donor.email} onChange={e => setDonor({...donor, email: e.target.value})} placeholder="nom@mail.com" className="mt-1 w-full p-2 border rounded-lg text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase">Code Postal</label>
-                    <input required type="text" value={donor.postalCode} onChange={e => setDonor({...donor, postalCode: e.target.value})} placeholder="Ex: 6000" className="mt-1 w-full p-2 border rounded-lg text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase">Téléphone</label>
-                    <input required type="tel" value={donor.phone} onChange={e => setDonor({...donor, phone: e.target.value})} placeholder="Ex: 0470..." className="mt-1 w-full p-2 border rounded-lg text-sm" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase">Genre Biologique</label>
