@@ -1,0 +1,2 @@
+// Fichier d'activation BloodPass V9
+import index from './index';
