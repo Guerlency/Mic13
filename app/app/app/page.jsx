@@ -22,21 +22,20 @@ export default function BloodPassApp() {
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  // Formulaire officiel complet GEN-DOC-FO-01A V9
+  // Formulaire officiel complet GEN-DOC-FO-01A V9 (Extraits Questions 1 à 36)
   const initialQuestionsV9 = [
-    { id: 'Q1', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous été transfusé(e) ?", type: 'date_place' },
-    { id: 'Q2', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous eu une greffe (dure-mère, cornée) ?", type: 'date_place' },
-    { id: 'Q3', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous eu une opération du cerveau (ou de la moëlle épinière) ?", type: 'date_place' },
-    { id: 'Q4', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous eu une opération du cœur ?", type: 'date_place' },
-    { id: 'Q5', section: 'SANTÉ', text: "Eu une maladie neurologique: épilepsie, AVC-AIT, sclérose en plaque, ou autre maladie grave ?", type: 'date_place' },
+    { id: 'Q1', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous été transfusé(e) ou reçu une greffe ?", type: 'date_place' },
+    { id: 'Q3', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous eu une opération du cerveau, du cœur ou de la moëlle épinière ?", type: 'date_place' },
     { id: 'Q6', section: 'SANTÉ', text: "Eu un diabète traité par insuline ?", type: 'comment' },
-    { id: 'Q7', section: 'SANTÉ', text: "Eu une maladie de Chagas, une malaria (accès de paludisme), une fièvre zika ?", type: 'date_place' },
+    { id: 'Q7', section: 'SANTÉ', text: "Eu une maladie de Chagas, une malaria (paludisme), une fièvre zika ?", type: 'date_place' },
     { id: 'Q8', section: 'SANTÉ', text: "Eu un cancer, une maladie du sang ou une tendance anormale au saignement ?", type: 'date_place' },
     { id: 'Q13', section: 'MÉDICAMENTS', text: "Pris du Proscar, du Combodart, ou de l'Avodart au cours des 30 derniers jours ?", type: 'comment' },
     { id: 'M16', section: 'MÉDICAMENTS', text: "Pris du Roaccutane au cours des 30 derniers jours ?", type: 'comment' },
     { id: 'Q18', section: 'MÉDICAMENTS', text: "Consommé de la drogue par voie nasale (snif) au cours des 12 derniers mois ?", type: 'comment' },
+    { id: 'Q20', section: 'VACCINS', text: "Avez-vous été vacciné(e) au cours des 30 derniers jours ou suivi une désensibilisation les 7 derniers jours ?", type: 'comment' },
     { id: 'Q24', section: 'EXPOSITION', text: "Au cours des 4 derniers mois, avez-vous fait un tatouage, un piercing ou un maquillage permanent ?", type: 'date_place' },
-    { id: 'Q30', section: 'EXPOSITION', text: "Êtes-vous allé chez le dentiste il y a moins d'une semaine ?", type: 'date_place' }
+    { id: 'Q30', section: 'EXPOSITION', text: "Êtes-vous allé chez le dentiste il y a moins d'une semaine ?", type: 'date_place' },
+    { id: 'Q36', section: 'VOYAGES', text: "Au cours des 6 derniers mois, avez-vous voyagé ou séjourné en dehors de la Belgique ?", type: 'date_place' }
   ];
 
   const [answersV9, setAnswersV9] = useState({});
@@ -112,7 +111,7 @@ export default function BloodPassApp() {
     if (currentQuestionIndex < initialQuestionsV9.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      setCurrentQuestionIndex(currentQuestionIndex + 1); // Déclenche l'écran de consentement
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
 
@@ -141,7 +140,7 @@ export default function BloodPassApp() {
     const updatedSession = { ...activeDoctorSession };
     updatedSession.donorInfo[field] = value;
     updatedSession.historyLogs.push({
-      action: `Mise à jour Conclusion Médicale -> [${field}] fixé à "${value}"`,
+      action: `Mise à jour Section Clinique -> [${field}] fixé à "${value}"`,
       timestamp: new Date().toLocaleTimeString(),
       operator: doctorName
     });
@@ -149,10 +148,43 @@ export default function BloodPassApp() {
     setActiveSessions({ ...activeSessions, [currentMedicalCode]: updatedSession });
   };
 
+  // --- TRAÇABILITÉ DES ALERTES EN TEMPS RÉEL (ESPACE MÉDECIN) ---
+  const clinicalAlerts = useMemo(() => {
+    if (!activeDoctorSession) return [];
+    const alerts = [];
+
+    // Alerte Voyage (MED-SEM-LI-02A)
+    if (activeDoctorSession.responses['Q36']?.value === 'OUI') {
+      const lieu = activeDoctorSession.responses['Q36']?.place || "non spécifié";
+      alerts.push({
+        type: 'ORANGE',
+        msg: `Alerte Épidémiologique : Séjour à l'étranger déclaré (${lieu}). Vérifier la base géographique pour fixer le délai d'écartement (ex: 4 mois si zone Paludisme).`
+      });
+    }
+
+    // Alerte Vaccin (Chapitre 4)
+    if (activeDoctorSession.responses['Q20']?.value === 'OUI') {
+      alerts.push({
+        type: 'ORANGE',
+        msg: "Alerte Vaccination : Antécédent de vaccin récent. Écarter de 4 semaines s'il s'agit d'un vaccin viral atténué (Fièvre Jaune, Dengue, RRO) ou de 48h si bactérien."
+      });
+    }
+
+    // Alerte Critique Exclusion à vie
+    if (activeDoctorSession.responses['Q6']?.value === 'OUI') {
+      alerts.push({
+        type: 'RED',
+        msg: "CRITÈRE D'EXCLUSION ABSOLUE : Diabète traité par insuline. Écartement définitif obligatoire pour la protection du donneur."
+      });
+    }
+
+    return alerts;
+  }, [activeDoctorSession]);
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       <header className="bg-red-800 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 className="text-sm font-bold">🩸 BloodPass ASBL — Formulaire Révisé GEN-DOC-FO-01A</h1>
+        <h1 className="text-sm font-bold">🩸 BloodPass ASBL — Console d'Entretien de Sélection</h1>
         {currentSpace !== 'auth' && (
           <button onClick={() => { setCurrentSpace('auth'); setActiveDoctorSession(null); }} className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-xs transition">
             Menu Principal
@@ -179,15 +211,3 @@ export default function BloodPassApp() {
         {currentSpace === 'donor' && (
           <div className="space-y-6">
             {!donor.eligibilityChecked ? (
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                <h2 className="text-md font-bold text-slate-900 mb-4 uppercase tracking-wide">1. Constantes Biométriques Administratives</h2>
-                <form onSubmit={handlePhysicalCheck} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <input required type="email" placeholder="Adresse Email" onChange={e => setDonor({...donor, email: e.target.value})} className="p-2.5 text-xs border rounded-lg" />
-                    <input type="text" placeholder="Code Postal" onChange={e => setDonor({...donor, postalCode: e.target.value})} className="p-2.5 text-xs border rounded-lg" />
-                    <input type="tel" placeholder="Téléphone" onChange={e => setDonor({...donor, phone: e.target.value})} className="p-2.5 text-xs border rounded-lg" />
-                    <select onChange={e => setDonor({...donor, donationType: e.target.value})} className="p-2.5 text-xs border rounded-lg bg-white">
-                      <option value="STHO">Sang Total</option>
-                      <option value="PLASMA">Plasma (Aphérèse)</option>
-                    </select>
-                  </div>
