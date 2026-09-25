@@ -1,37 +1,12 @@
- import React, { useState, useMemo } from 'react';
+ 'use client';
 
-// --- INTERFACES & TYPES ---
-interface DonorAccount {
-  email: string;
-  postalCode: string;
-  phone: string;
-  age: number;
-  weight: number; // en kg
-  height: number; // en cm
-  gender: 'M' | 'F';
-  eligibilityChecked: boolean;
-  isGloballyEligible: boolean;
-  rejectionReason: string;
-  vst: number; // Volume Sanguin Total (Nadler)
-  maxAllowedVolume: number; // 13% du VST
-  questionnaireAnswers: Record<string, string>;
-  medicationAnswers: Record<string, string>;
-  questionnaireSubmitted: boolean;
-}
-
-interface CountryData {
-  name: string;
-  stho: string;
-  plas: string;
-  plqt: string;
-  risk: string;
-}
+import React, { useState, useMemo } from 'react';
 
 export default function BloodPassApp() {
-  const [currentSpace, setCurrentSpace] = useState<string>('auth');
+  const [currentSpace, setCurrentSpace] = useState('auth');
 
   // --- BASE GÉOGRAPHIQUE HÉRITÉE (MED-SEM-LI-02A) ---
-  const countries: CountryData[] = [
+  const countries = [
     { name: "AFGHANISTAN", stho: "4 mois", plas: "28 jours", plqt: "6 mois", risk: "Paludisme" },
     { name: "AFRIQUE DU SUD", stho: "4 mois", plas: "28 jours", plqt: "6 mois", risk: "Paludisme" },
     { name: "ANGOLA", stho: "4 mois", plas: "28 jours", plqt: "6 mois", risk: "Paludisme, Zika" },
@@ -43,15 +18,15 @@ export default function BloodPassApp() {
   ];
 
   // --- ÉTAT DU DONNEUR ---
-  const [donor, setDonor] = useState<DonorAccount>({
+  const [donor, setDonor] = useState({
     email: '', postalCode: '', phone: '', age: 0, weight: 0, height: 0, gender: 'F',
     eligibilityChecked: false, isGloballyEligible: true, rejectionReason: '',
     vst: 0, maxAllowedVolume: 0,
     questionnaireAnswers: {}, medicationAnswers: {}, questionnaireSubmitted: false
   });
 
-  // --- SCRIPT D'ENTRETIEN RÉGLEMENTAIRE ---
-  const [questions, setQuestions] = useState<Record<string, string>>({
+  // --- SCRIPT D'ENTRETIEN RÉGLEMENTAIRE (Dossier Charleroi 1) ---
+  const [questions, setQuestions] = useState({
     'Q1': "Au cours de votre vie, avez-vous déjà été transfusé ou reçu une greffe ?",
     'Q3': "Avez-vous subi une opération lourde du cœur, du cerveau ou de la moelle épinière ?",
     'Q18': "Au cours des 12 derniers mois, avez-vous consommé de la drogue par le nez (snif) ?",
@@ -77,40 +52,33 @@ export default function BloodPassApp() {
   ];
 
   // --- ÉTAT MÉDECIN ---
-  const [medicalSearch, setMedicalSearch] = useState<string>('');
+  const [medicalSearch, setMedicalSearch] = useState('');
   const medicalManualDocs = useMemo(() => [
     { id: "MAN-01", title: "Sélection Médicale des Donneurs — Cadre Belge", content: "ETS La Transfusion du Sang de Charleroi (MED-SEM-SO-010). Basé sur la loi du 05/07/1994. Le poids minimum légal est de 50 kg. Une femme de 50 kg doit mesurer au moins 1m53. L'exclusion doit être définitive si la pathologie est grave ou active." },
     { id: "MAN-02", title: "Pharmacotoxicité et Contre-indications Spécifiques", content: "L'anamnèse médicamenteuse protège le receveur des risques tératogènes et d'embryotoxicité. Exclusions à vie : Insuline, chimiothérapie. Exclusions temporaires majeures : Rétinoïdes (Neotigason 3 ans), Arava (2 ans), Roaccutane (1 mois), Proscar (1 mois)." },
     { id: "MAN-03", title: "Risques Épidémiologiques Mondiaux (Voyages)", content: "Maladie de Chagas : Amérique Latine continentale. Écartement de 6 mois si séjour en plein air (camping, belle étoile) ou habitation précaire (briques d'adobe). Paludisme/Malaria : Écartement de 4 mois pour le sang total homologue (STHO) et 6 mois pour les plaquettes." }
   ], []);
 
-  // --- LOGIQUE D'ÉLIGIBILITE MORPHOLOGIQUE (FORMULE DE NADLER & LOI) ---
-  const handlePhysicalCheck = (e: React.FormEvent) => {
+  // --- LOGIQUE MORPHOLOGIQUE (FORMULE DE NADLER & LOI) ---
+  const handlePhysicalCheck = (e) => {
     e.preventDefault();
     let eligible = true;
     let reason = "";
 
-    // 1. Limites légales de base [2]
     if (donor.age < 18 || donor.age >= 66) {
       eligible = false;
       reason = "L'âge légal doit être compris entre 18 ans et la veille du 66ème anniversaire pour un don homologue.";
     } else if (donor.weight < 50) {
       eligible = false;
-      reason = "Le poids minimum légal absolu est de 50 kg.";
+      reason = "Le poids minimum légal absolu exigé est de 50 kg.";
     } else if (donor.gender === 'F' && donor.weight === 50 && donor.height < 153) {
       eligible = false;
-      reason = "Abaque Femme : à 50 kg, la donneuse doit mesurer au moins 1m53 pour ne pas prélever plus de 13% de sa masse sanguine.";
+      reason = "Abaque Femme : à 50 kg, la donneuse doit mesurer au moins 1m53 pour respecter le volume sanguin.";
     }
 
-    // 2. Calcul mathématique de l'Équation de Nadler [2]
-    // Conversion en mesures impériales requises par la formule : 1 cm = 0.3937 pouce, 1 kg = 2.2046 livres
     const heightInInches = donor.height * 0.3937;
     const weightInPounds = donor.weight * 2.2046;
-    
-    // Formule : (0.006012 x Taille³) + (14.6 x Poids) + 604 -> Donné en ml [2]
     const calculatedVst = (0.006012 * Math.pow(heightInInches, 3)) + (14.6 * weightInPounds) + 604;
-    
-    // Le volume prélevé maximum toléré (Loi : maximum 13% du VST) [2]
     const maxVolume = calculatedVst * 0.13;
 
     setDonor({
@@ -123,8 +91,7 @@ export default function BloodPassApp() {
     });
   };
 
-  // --- RECHERCHE TEXTUELLE DU MÉDECIN ---
-  const highlightMedicalText = (text: string, search: string) => {
+  const highlightMedicalText = (text, search) => {
     if (!search.trim()) return text;
     const regex = new RegExp(`(${search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
     const parts = text.split(regex);
@@ -139,22 +106,20 @@ export default function BloodPassApp() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      <header className="bg-red-700 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-50">
-        <h1 className="text-xl font-bold tracking-wider flex items-center gap-2">🩸 BloodPass — Portails Transfusionnels</h1>
+      <header className="bg-red-700 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 className="text-xl font-bold tracking-wider flex items-center gap-2">🩸 BloodPass — Charleroi</h1>
         {currentSpace !== 'auth' && (
           <button onClick={() => setCurrentSpace('auth')} className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-            Déconnexion Espace
+            Menu Principal
           </button>
         )}
       </header>
 
       <main className="max-w-4xl mx-auto p-4 md:p-6 pb-24">
-        
-        {/* ================= ÉCRAN D'AUTHENTIFICATION SIMULÉE ================= */}
         {currentSpace === 'auth' && (
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md mx-auto mt-16 border border-slate-100">
             <h2 className="text-xl font-bold text-center text-slate-900 mb-2">Accès aux Espaces BloodPass</h2>
-            <p className="text-xs text-slate-400 text-center mb-6">Plateforme de facilité Transfusion connectée à Vercel.</p>
+            <p className="text-xs text-slate-400 text-center mb-6">Application connectée et synchronisée sur Vercel.</p>
             <div className="space-y-3">
               <button onClick={() => setCurrentSpace('donor')} className="w-full bg-red-600 text-white p-3 rounded-xl font-medium hover:bg-red-700 transition flex justify-between items-center">
                 <span>Espace Candidat Donneur</span> <span>👤</span>
@@ -169,7 +134,6 @@ export default function BloodPassApp() {
           </div>
         )}
 
-        {/* ================= 1. ESPACE DONNEUR ================= */}
         {currentSpace === 'donor' && (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -178,3 +142,18 @@ export default function BloodPassApp() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase">Adresse Email</label>
+                    <input required type="email" value={donor.email} onChange={e => setDonor({...donor, email: e.target.value})} placeholder="nom@mail.com" className="mt-1 w-full p-2 border rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase">Code Postal</label>
+                    <input required type="text" value={donor.postalCode} onChange={e => setDonor({...donor, postalCode: e.target.value})} placeholder="Ex: 6000" className="mt-1 w-full p-2 border rounded-lg text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase">Téléphone</label>
+                    <input required type="tel" value={donor.phone} onChange={e => setDonor({...donor, phone: e.target.value})} placeholder="Ex: 0470..." className="mt-1 w-full p-2 border rounded-lg text-sm" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase">Genre Biologique</label>
