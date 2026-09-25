@@ -33,7 +33,6 @@ export default function BloodPassApp() {
     doctorSignature: '',
     medicalConclusion: '', 
     exclusionType: 'Temporaire',
-    // Historique factuel simulé pour la page d'accueil
     pastDonations: [
       { id: 'DON-901', date: '14/05/2026', type: 'Sang Total', location: 'Maison du Don - Loverval', status: 'Validé' },
       { id: 'DON-742', date: '10/01/2026', type: 'Sang Total', location: 'Centre Hospitalier de Charleroi', status: 'Validé' }
@@ -171,7 +170,7 @@ export default function BloodPassApp() {
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       <header className="bg-red-800 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 className="text-sm font-bold">🩸 BloodPass — Portail de Transfusion de Charleroi</h1>
+        <h1 className="text-xl font-bold tracking-wider">🩸 BloodPass — Charleroi</h1>
         {currentSpace !== 'auth' && (
           <button onClick={() => { setCurrentSpace('auth'); setActiveDoctorSession(null); }} className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-xs transition">
             Déconnexion
@@ -194,10 +193,9 @@ export default function BloodPassApp() {
           </div>
         )}
 
-        {/* ================= NEW MODULE : PAGE D'ACCUEIL PERSONNALISÉE DONNEUR ================= */}
+        {/* ================= PORTAIL ACCUEIL DONNEUR (VALEUR CORRIGÉE À 62 JOURS) ================= */}
         {currentSpace === 'donor_home' && (
           <div className="space-y-5">
-            {/* Carte d'identité numérique du donneur */}
             <div className="bg-gradient-to-r from-red-700 to-rose-600 text-white p-5 rounded-2xl shadow-md flex justify-between items-center">
               <div>
                 <p className="text-3xs uppercase tracking-widest text-red-200 font-bold">Carte de Donneur Virtuelle</p>
@@ -208,3 +206,7 @@ export default function BloodPassApp() {
                 </div>
               </div>
               <div className="bg-white text-red-700 font-mono text-xl font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-md">
+                {donor.bloodGroup}
+              </div>
+            </div>
+
