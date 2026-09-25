@@ -5,13 +5,21 @@ import React, { useState, useMemo } from 'react';
 export default function BloodPassApp() {
   const [currentSpace, setCurrentSpace] = useState('auth');
   
+  // --- SYSTÈME DE NOTIFICATIONS GLOBALES (ADMINISTRATEUR) ---
+  const [globalNotifications, setGlobalNotifications] = useState([
+    { id: 1, targetType: 'ALL', targetValue: 'Tous', text: 'Bienvenue sur la version V9 de BloodPass Charleroi !', date: '25/09/2026' }
+  ]);
+  const [adminMsg, setAdminMsg] = useState('');
+  const [adminTargetType, setAdminTargetType] = useState('POSTAL'); // POSTAL, BLOOD, ALL
+  const [adminTargetValue, setAdminTargetValue] = useState('6000');
+
   // --- GESTION DES CODES DE SESSIONS (12 HEURES) ---
   const [activeSessions, setActiveSessions] = useState({});
   const [currentMedicalCode, setCurrentMedicalCode] = useState('');
   const [activeDoctorSession, setActiveDoctorSession] = useState(null);
   const [doctorName, setDoctorName] = useState('Dr. Renard');
 
-  // --- ÉTAT DU DONNEUR, HISTORIQUE ET QUESTIONNAIRE ---
+  // --- ÉTAT DU DONNEUR, HISTORIQUE ET CALENDRIER ---
   const [donor, setDonor] = useState({
     email: 'guerlency.mic13@charleroi.be', 
     postalCode: '6000', 
@@ -33,11 +41,27 @@ export default function BloodPassApp() {
     doctorSignature: '',
     medicalConclusion: '', 
     exclusionType: 'Temporaire',
+    // Compteur de badges et récompenses (Donneur régulier)
+    donationCount: 5,
+    badges: [
+      { name: '🥇 Premier Don', desc: 'Validé en janvier 2026', color: 'bg-amber-500' },
+      { name: '🩸 Sauveur régulier', desc: 'Plus de 3 dons accomplis', color: 'bg-red-500' },
+      { name: '🛡️ Donneur de Bronze', desc: 'Fidélité ETS Charleroi', color: 'bg-amber-700' }
+    ],
+    // Calendrier et Rendez-vous
+    appointments: [
+      { id: 'APT-102', date: '2026-10-05', time: '14:30', location: 'Maison du Don - Loverval', status: 'Confirmé' }
+    ],
     pastDonations: [
       { id: 'DON-901', date: '14/05/2026', type: 'Sang Total', location: 'Maison du Don - Loverval', status: 'Validé' },
       { id: 'DON-742', date: '10/01/2026', type: 'Sang Total', location: 'Centre Hospitalier de Charleroi', status: 'Validé' }
     ]
   });
+
+  // États pour la prise de rendez-vous
+  const [selectedDate, setSelectedDate] = useState('2026-10-12');
+  const [selectedTime, setSelectedTime] = useState('10:00');
+  const [selectedLoc, setSelectedLoc] = useState('Maison du Don - Loverval');
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
@@ -133,80 +157,70 @@ export default function BloodPassApp() {
     }
   };
 
-  const handleDoctorAccess = (e) => {
+  // Envoi notification ciblée par l'administrateur
+  const handleSendAdminNotification = (e) => {
     e.preventDefault();
-    const targetSession = activeSessions[currentMedicalCode];
-    if (!targetSession) { alert("Code invalide ou expiré (12h)."); return; }
-    setActiveDoctorSession(targetSession);
+    if (!adminMsg.trim()) return;
+
+    const newNotif = {
+      id: Date.now(),
+      targetType: adminTargetType,
+      targetValue: adminTargetValue,
+      text: adminMsg,
+      date: '25/09/2026'
+    };
+
+    setGlobalNotifications([newNotif, ...globalNotifications]);
+    setAdminMsg('');
+    alert(`Notification groupée envoyée avec succès aux donneurs ciblés par ${adminTargetType} : ${adminTargetValue}.`);
   };
 
-  const updateQuestionByDoctor = (qId, field, value) => {
-    const updatedSession = { ...activeDoctorSession };
-    updatedSession.responses[qId][field] = value;
-    setActiveDoctorSession(updatedSession);
+  // Simulation d'alerte SMS
+  const triggerSmsAlertSim = () => {
+    alert(`[Alerte SMS BloodPass] Envoyé au ${donor.phone} : "Cher Guerlency, votre délai légal de 62 jours est expiré. Les réserves de sang O+ à Charleroi sont basses, venez donner !"`);
   };
 
-  const finalizeConclusionByDoctor = (field, value) => {
-    const updatedSession = { ...activeDoctorSession };
-    updatedSession.donorInfo[field] = value;
-    setActiveDoctorSession(updatedSession);
+  // Demande de rendez-vous calendrier
+  const handleBookAppointment = (e) => {
+    e.preventDefault();
+    const newApt = {
+      id: `APT-${Math.floor(100 + Math.random() * 900)}`,
+      date: selectedDate,
+      time: selectedTime,
+      location: selectedLoc,
+      status: 'En attente de validation'
+    };
+    setDonor({
+      ...donor,
+      appointments: [newApt, ...donor.appointments]
+    });
+    alert("Votre demande de rendez-vous a bien été transmise à l'administration de l'ETS Charleroi.");
   };
 
-  const clinicalAlerts = useMemo(() => {
-    if (!activeDoctorSession) return [];
-    const alerts = [];
-    if (activeDoctorSession.responses['Q36']?.value === 'OUI') {
-      alerts.push({ type: 'ORANGE', msg: `Alerte Épidémiologique : Séjour à l'étranger déclaré (${activeDoctorSession.responses['Q36']?.place || "non spécifié"}).` });
-    }
-    if (activeDoctorSession.responses['Q20']?.value === 'OUI') {
-      alerts.push({ type: 'ORANGE', msg: "Alerte Vaccination : Antécédent de vaccin récent (Délai à vérifier)." });
-    }
-    if (activeDoctorSession.responses['Q6']?.value === 'OUI') {
-      alerts.push({ type: 'RED', msg: "CRITÈRE D'EXCLUSION ABSOLUE : Diabète traité par insuline." });
-    }
-    return alerts;
-  }, [activeDoctorSession]);
+  // Filtrage des notifications visibles par notre donneur test
+  const filteredNotificationsForDonor = useMemo(() => {
+    return globalNotifications.filter(n => {
+      if (n.targetType === 'ALL') return true;
+      if (n.targetType === 'POSTAL' && n.targetValue === donor.postalCode) return true;
+      if (n.targetType === 'BLOOD' && n.targetValue === donor.bloodGroup) return true;
+      return false;
+    });
+  }, [globalNotifications, donor]);
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       <header className="bg-red-800 text-white p-4 shadow-md flex justify-between items-center">
         <h1 className="text-xl font-bold tracking-wider">🩸 BloodPass — Charleroi</h1>
         {currentSpace !== 'auth' && (
-          <button onClick={() => { setCurrentSpace('auth'); setActiveDoctorSession(null); }} className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-xs transition">
-            Déconnexion
+          <button onClick={() => setCurrentSpace('auth')} className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-xs transition">
+            Espaces Principaux
           </button>
         )}
       </header>
 
-      <main className="max-w-2xl mx-auto p-4 md:p-6">
+      <main className="max-w-2xl mx-auto p-4 md:p-6 pb-24">
         {currentSpace === 'auth' && (
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm mx-auto mt-16 border border-slate-200">
             <h2 className="text-md font-bold text-center text-slate-900 mb-4">Accès Portails BloodPass</h2>
             <div className="space-y-3">
               <button onClick={() => setCurrentSpace('donor_home')} className="w-full bg-red-600 text-white p-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-red-700 transition flex justify-between items-center">
-                <span>Espace Personnel Donneur</span> <span>👤</span>
-              </button>
-              <button onClick={() => setCurrentSpace('doctor')} className="w-full bg-blue-700 text-white p-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-800 transition flex justify-between items-center">
-                <span>Espace Médecin Référent</span> <span>🩺</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ================= PORTAIL ACCUEIL DONNEUR (VALEUR CORRIGÉE À 62 JOURS) ================= */}
-        {currentSpace === 'donor_home' && (
-          <div className="space-y-5">
-            <div className="bg-gradient-to-r from-red-700 to-rose-600 text-white p-5 rounded-2xl shadow-md flex justify-between items-center">
-              <div>
-                <p className="text-3xs uppercase tracking-widest text-red-200 font-bold">Carte de Donneur Virtuelle</p>
-                <h2 className="text-md font-bold mt-1">{donor.email}</h2>
-                <div className="flex gap-4 mt-3 text-3xs text-red-100 font-medium">
-                  <p>CP : <strong className="text-white">{donor.postalCode}</strong></p>
-                  <p>ID : <strong className="text-white">#BP-62802</strong></p>
-                </div>
-              </div>
-              <div className="bg-white text-red-700 font-mono text-xl font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-md">
-                {donor.bloodGroup}
-              </div>
-            </div>
-
