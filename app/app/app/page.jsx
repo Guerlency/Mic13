@@ -1,114 +1,180 @@
-'use client';
+ import React, { useState, useMemo } from 'react';
 
-import React, { useMemo, useState } from 'react';
-
-const MANUELS = [
-  {
-    id: 'charleroi',
-    titre: 'Manuel de sélection médicale des donneurs — ETS Charleroi',
-    texte: `DOCUMENT 1 — QUESTIONS DE SÉLECTION (Q1 À Q47)
-
-Q1: Transfusé au cours de votre vie? (Ajournement temporaire ou définitif selon ligne)
-Q2: Reçu une greffe/allogreffe au cours de votre vie? (Définitif si SNC, cornée, dure-mère, organes)
-Q3: Subi une opération lourde du cerveau ou de la moelle épinière? (Définitif - Prions)
-Q4: Subi une opération lourde du cœur? (Définitif - Protection donneur)
-Q5: Troubles cardiaques sévères ou cardiopathie symptomatique? (Définitif)
-Q6: Diabète sous insuline / insulinodépendant? (Définitif)
-Q7: Souffrez-vous d'une affection thyroïdienne (hyperthyïdie avec goitre/nodules, thyroïdite) ? (Ajournement 1 mois après guérison ou arrêt antithyroïdiens / iode radioactif)
-Q8: Cancer, pathologie maligne ou maladie du sang (Leucémie, Lymphome)? (Définitif)
-Q9: Hémochromatose? (Autorisé sous protocole MED-SEM-FO-04A/B, max 6x/an)
-Q10: Troubles neurologiques ou psychiatriques sévères? (Définitif - Consentement non fiable)
-Q11: Souffrez-vous d'asthme ? (Écartement 1 semaine après la dernière crise et rétablissement complet)
-Q12: Souffrez-vous de bronchite aiguë ? (Écartement 2 semaines selon l'état général et l'étiologie)
-Q13: Avez-vous des antécédents d'embolie pulmonaire isolée sans séquelles ? (Écartement 6 mois après arrêt de tout R/)
-Q14: Êtes-vous suivi pour une sarcoïdose pulmonaire ? (Autorisé si attestation de guérison complète sans R/, DEFINITIF si récidives)
-Q15: Pris des hormones de croissance humaines avant 1989? (Définitif - Maladie de Creutzfeldt-Jakob)
-Q16: Avez-vous eu un épisode de gastro-entérite récente ? (48h après fin des symptômes si non fébrile, 2 semaines si fébrile)
-Q17: Présentez-vous ou avez-vous présenté un ictère (jaunisse) non documenté ? (Provisoire, attente bilan, lookback 1 an)
-Q18: Consommé de la drogue par voie nasale (snif) les 12 derniers mois? (Ajournement 12 mois)
-Q19: Êtes-vous traité pour une colite néphrétique ? (15 jours en période de crise, autorisé si asymptomatique)
-Q20: Reçu un vaccin ou débuté une désensibilisation ce mois-ci? (Inactivé: OK, Atténué: 4 semaines, Covid avec symptômes: 7 jours)
-Q21: Souffrez-vous de migraines ou céphalées ? (Autorisé en dehors des crises si R/ non contre-indiqué)
-Q22: Hospitalisé ou opéré au cours des 4 derniers mois? (Ajournement 4 mois)
-Q23: Avez-vous des antécédents de convulsions fébriles dans l'enfance ? (Autorisé si convulsions dues à l'hyperthermie dans l'enfance)
-Q24: Fait un tatouage, piercing, maquillage permanent ou dé-tatouage les 4 derniers mois? (Ajournement 4 mois)
-Q25: Reçu des soins d'acupuncture par un non-médecin ou avec aiguilles réutilisables les 4 derniers mois? (Ajournement 4 mois)
-Q26: Avez-vous subi une infiltration intra-articulaire ou une péridurale antalgique ? (Infiltration: autorisé selon étiologie. Péridurale: 15 jours)
-Q27: Souffrez-vous d'une maladie osseuse comme la maladie de Paget ? (Autorisé si asymptomatique, DEFINITIF si complications)
-Q28: Perdu plus de 5 kg sans raison récemment (perte de poids inexpliquée)? (Écartement temporaire, bilan requis)
-Q29: Eu la grippe ou un état fébrile > 38° au cours des 2 dernières semaines? (Ajournement 2 semaines)
-Q30: Allé chez le dentiste au cours des 7 derniers jours (Détartrage, extraction)? (Ajournement 7 jours pour soins majeurs, 24h pour carie)
-Q31: Êtes-vous sujet à des crises d'épistaxis (saignements de nez) répétitives ? (Autorisé, vigilance taux d'hémoglobine)
-Q32: Été mordu par une tique ce mois-ci? (Ajournement 3 mois si érythème migrant, 30 jours si morsure < 15 jours)
-Q33: Présentez-vous des lésions d'herpès labial (bouton de fièvre) ou génital ? (Labial: jusqu'à assèchement. Génital: 2 semaines après guérison)
-Q34: Êtes-vous atteint d'une dermatose étendue (Eczéma étendu, Psoriasis étendu) ? (Temporaire jusqu'à guérison pour éviter le risque de surinfection)
-Q35: Séjourné plus de 6 mois cumulés au Royaume-Uni entre 1980 et 1996? (Définitif - Variante de la maladie de Creutzfeldt-Jakob)
-Q36: Voyagé ou séjourné en dehors de la Belgique (minimum 48h) au cours des 6 derniers mois? (Délai selon zone: Malaria 4 mois, Chagas 6 mois/28j, Zika 28j)
-Q37: Nouveau partenaire sexuel ou partenaire occasionnel au cours des 4 derniers mois? (Ajournement 4 mois)
-Q38: Rapport sexuel avec une personne touchée par une IST (Syphilis, Gonococcie, Chlamydia)? (Ajournement 4 mois)
-Q39: Avez-vous des antécédents de Rhumatismes Articulaires Aigus (RAA) ? (2 ans après guérison si sans atteinte cardiaque, DEFINITIF si atteinte cardiaque)
-Q40: Avez-vous récemment fait l'objet d'une biopsie ? (Superficielle: 1 semaine en attente anapath. Profonde: 4 mois, lookback infectieux)
-Q41: Rapports sexuels tarifés (échange d'argent/biens/services) les 12 derniers mois? (Ajournement 12 mois)
-Q42: Partenaires sexuels multiples sur une même période au cours des 12 derniers mois? (Ajournement 12 mois)
-Q43: Participation à du sexe en groupe au cours des 12 derniers mois? (Ajournement 12 mois)
-Q44: Avez-vous une allergie aiguë active (Urticaire, œdème de Quincke) ? (1 semaine accomplie après la fin des symptômes. DEFINITIF si angioedème héréditaire)
-Q45: Pour les femmes, accouché au cours des 6 derniers mois ou allaitement en cours? (Ajournement 6 mois après accouchement, temporaire si allaitement exclusif)
-Q46: Pour les femmes, fait une fausse couche ou une IVG au cours des 6 derniers mois? (Ajournement 6 mois)
-Q47: Pour les femmes, rapport sexuel avec un homme qui a des rapports sexuels avec des hommes (HSH)? (Ajournement 4 mois)
-
-CRITÈRES GÉNÉRAUX
-Âge minimum: 18 ans. Premier don jusqu'à la veille du 66ème anniversaire. Poids minimum légal: 50 kg. Hémoglobine STHO: >= 12,5 g/dl pour les femmes et >= 13,5 g/dl pour les hommes. Délai entre deux dons de sang total: 2 mois minimum, paramétré à 62 jours.`,
-  },
-  {
-    id: 'medicaments',
-    titre: 'Liste complète des médicaments et durées d’exclusion — DonDeSang.be',
-    texte: `DOCUMENT 2 — MÉDICAMENTS ET CONTRE-INDICATIONS
-
-Les délais commencent le jour suivant la dernière dose. Contre-indication au don de plaquettes pendant 3 jours pour Asaflow, Aspirine, Cardio-aspirine, Anti-inflammatoires non stéroïdiens (AINS) systémiques. Exclusion définitive pour Insuline, Chimiothérapie antitumorale, Hormone de croissance humaine avant 1989. Exclusion de 3 ans pour Acitrétine (Neotigason), Étrétinate (Tegison) et antiépileptiques prescrits pour épilepsie (Acide valproïque/Dépakine, carbamazépine/Tegretol, topiramate/Topamax). Exclusion de 2 ans pour Léflunomide (Arava), Tériflunomide (Aubagio) et Rituximab. Exclusion de 6 mois pour Dutastéride (Avodart, Combodart, Prostatex), Méthotrexate, Azathioprine (Imuran, Imurel), Ciclosporine (Néoral, Sandimmun), Tacrolimus (Prograf), Sirolimus, Évérolimus, Mycophénolate mofétil (CellCept) et Anticorps monoclonaux (Aimovig, Repatha, Humira). Exclusion de 3 mois pour Hydroxychloroquine (Plaquenil) et Clomifène (Clomid). Exclusion de 1 mois pour Isotrétinoïne (Roaccutane, Isosupra, Isocural), Finastéride (Proscar, Propecia), Lithium, Camcolit, Maniprex, Priadel, Strumazol, Thyrozol. Exclusion de 2 semaines pour Cortisone per os/injection (Jorveza, budésonide). Exclusion de 7 jours pour les Antibiotiques (guérison complète requise). Exclusion de 12h pour Vermox.`,
-  },
-  {
-    id: 'pays',
-    titre: 'Grille géographique des pays et délais d’écartement',
-    texte: `DOCUMENT 3 — PAYS À RISQUES INFECTIEUX
-
-Séjour de minimum 48 heures. Risque Chagas (Amérique Latine continentale): 6 mois si plein air/camping/habitation précaire ou durée > 3 mois; 28 jours si hôtel ou courte durée < 3 mois. Risque West Nile Virus (WNV): du 1er juillet au 30 novembre, écartement de 28 jours après le retour. Grille fixe: AFGHANISTAN, AFRIQUE DU SUD, ANGOLA, BANGLADESH, BENIN, BHOUTAN, BIRMANIE, BOTSWANA, BURKINA FASO, BURUNDI, CAMBODGE, CAMEROUN, COMORES, CONGO, COREE NORD, COREE SUD, DJIBOUTI, DOMINICAINE (Rép), EGYPTE (El Fayoum), ERYTHREE, ETHIOPIE, GABON, GAMBIE, GHANA, GUINEE, GUINEE EQUATORIALE, GUINEE BISSAU, HAITI, HAUTE-VOLTA, HAWAI, INDE, INDONESIE, IRAK, IRAN, KENYA, LAOS, LESOTHO, LIBERIA, MADAGASCAR, MALAISIE, MALAWI, MALI, MAURITANIE, MOZAMBIQUE, NAMIBIE, NEPAL, NIGER, NIGERIA, OUGANDA, PAKISTAN, PAPOUASIE, PHILIPPINES, RDC, RWANDA, SENEGAL, SIERRA LEONE, SOMALIE, SOUDAN, TANZANIE, TCHAD, THAILANDE, TOGO, TURQUIE (sud-est), VIETNAM, YEMEN, ZAMBIE, ZIMBABWE (Risque Paludisme: STHO = 4 mois, PLASMA = 28j, PLQT = 6 mois). ARGENTINE, BOLIVIE, BRESIL, COLOMBIE, COSTA RICA, EQUATEUR, GUATEMALA, GUYANE, HONDURAS, MEXIQUE, NICARAGUA, PANAMA, PARAGUAY, PEROU, SALVADOR, VENEZUELA (Risque Chagas, voir critères). ANGUILLA, BAHAMAS, BARBADE, CARAIBES, CUBA, CURACAO, GUADELOUPE, MARTINIQUE, REUNION, SAINT MARTIN, SINGAPOUR, TAHITI, TAIWAN (Risque Tropical/Zika/Dengue: 28 jours). CANADA, ETATS-UNIS, USA, RUSSIE, UKRAINE (Risque WNV: 28 jours).`,
-  },
-];
-
-const normaliser = (texte) => texte.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase();
-const echapperRegex = (texte) => texte.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
-
-function Surligner({ texte, terme }) {
-  if (!terme) return <>{texte}</>;
-  return texte.split(new RegExp(`(${echapperRegex(terme)})`, 'ig')).map((partie, index) => normaliser(partie) === normaliser(terme) ? <mark key={index}>{partie}</mark> : <React.Fragment key={index}>{partie}</React.Fragment>);
+// --- INTERFACES & TYPES ---
+interface DonorAccount {
+  email: string;
+  postalCode: string;
+  phone: string;
+  age: number;
+  weight: number; // en kg
+  height: number; // en cm
+  gender: 'M' | 'F';
+  eligibilityChecked: boolean;
+  isGloballyEligible: boolean;
+  rejectionReason: string;
+  vst: number; // Volume Sanguin Total (Nadler)
+  maxAllowedVolume: number; // 13% du VST
+  questionnaireAnswers: Record<string, string>;
+  medicationAnswers: Record<string, string>;
+  questionnaireSubmitted: boolean;
 }
 
-export default function SanPassDashboard() {
-  const [recherche, setRecherche] = useState('');
-  const [filtre, setFiltre] = useState('tous');
-  const resultats = useMemo(() => {
-    const terme = normaliser(recherche.trim());
-    if (!terme) return [];
-    return MANUELS.flatMap((manuel) => manuel.texte.split(/\\n\\s*\\n/).map((texte, index) => ({ manuel, texte, index })))
-      .filter(({ manuel, texte }) => (filtre === 'tous' || manuel.id === filtre) && normaliser(texte).includes(terme));
-  }, [recherche, filtre]);
-
-  return <main style={{ maxWidth: 1100, margin: '32px auto', padding: '0 20px', fontFamily: 'system-ui, sans-serif' }}>
-    <header style={{ borderBottom: '3px solid #dc3545', paddingBottom: 14, marginBottom: 24 }}>
-      <h1 style={{ color: '#dc3545', margin: 0 }}>🩸 SanPass</h1>
-      <p>L’écosystème connecté de l’éligibilité transfusionnelle</p>
-    </header>
-    <section>
-      <h2>Console Médicale</h2>
-      <p>Recherche plein texte dans les paragraphes bruts des trois documents ; les occurrences sont surlignées dans le paragraphe exact.</p>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher hémoglobine, Asaflow, paludisme, Q47…" style={{ flex: 1, minWidth: 280, padding: 11 }} />
-        <select value={filtre} onChange={(e) => setFiltre(e.target.value)} style={{ padding: 11 }}><option value="tous">Tous les documents</option>{MANUELS.map((manuel) => <option key={manuel.id} value={manuel.id}>{manuel.titre}</option>)}</select>
-      </div>
-      {recherche.trim() && <p><strong>{resultats.length}</strong> paragraphe(s) trouvé(s).</p>}
-      {resultats.map(({ manuel, texte, index }) => <article key={`${manuel.id}-${index}`} style={{ marginTop: 14, padding: 18, border: '1px solid #dee2e6', borderRadius: 8 }}><small>{manuel.titre}</small><p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}><Surligner texte={texte} terme={recherche.trim()} /></p></article>)}
-      {recherche.trim() && !resultats.length && <p>Aucun paragraphe correspondant.</p>}
-    </section>
-    <footer style={{ marginTop: 30, color: '#6c757d' }}>SanPass — outil de consultation. Toute décision clinique doit être prise par un professionnel habilité sur la base des versions réglementaires validées.</footer>
-  </main>;
+interface CountryData {
+  name: string;
+  stho: string;
+  plas: string;
+  plqt: string;
+  risk: string;
 }
+
+export default function BloodPassApp() {
+  const [currentSpace, setCurrentSpace] = useState<string>('auth');
+
+  // --- BASE GÉOGRAPHIQUE HÉRITÉE (MED-SEM-LI-02A) ---
+  const countries: CountryData[] = [
+    { name: "AFGHANISTAN", stho: "4 mois", plas: "28 jours", plqt: "6 mois", risk: "Paludisme" },
+    { name: "AFRIQUE DU SUD", stho: "4 mois", plas: "28 jours", plqt: "6 mois", risk: "Paludisme" },
+    { name: "ANGOLA", stho: "4 mois", plas: "28 jours", plqt: "6 mois", risk: "Paludisme, Zika" },
+    { name: "ARGENTINE (Plein air / précaire)", stho: "6 mois", plas: "6 mois", plqt: "6 mois", risk: "Chagas, Zika" },
+    { name: "ARGENTINE (Hôtel / Standard)", stho: "28 jours", plas: "28 jours", plqt: "28 jours", risk: "Zika" },
+    { name: "BELGIQUE", stho: "Ok", plas: "Ok", plqt: "Ok", risk: "Aucun" },
+    { name: "BRESIL (Plein air / précaire)", stho: "6 mois", plas: "6 mois", plqt: "6 mois", risk: "Chagas, Paludisme, Zika" },
+    { name: "FRANCE", stho: "Ok", plas: "Ok", plqt: "Ok", risk: "Aucun" },
+  ];
+
+  // --- ÉTAT DU DONNEUR ---
+  const [donor, setDonor] = useState<DonorAccount>({
+    email: '', postalCode: '', phone: '', age: 0, weight: 0, height: 0, gender: 'F',
+    eligibilityChecked: false, isGloballyEligible: true, rejectionReason: '',
+    vst: 0, maxAllowedVolume: 0,
+    questionnaireAnswers: {}, medicationAnswers: {}, questionnaireSubmitted: false
+  });
+
+  // --- SCRIPT D'ENTRETIEN RÉGLEMENTAIRE ---
+  const [questions, setQuestions] = useState<Record<string, string>>({
+    'Q1': "Au cours de votre vie, avez-vous déjà été transfusé ou reçu une greffe ?",
+    'Q3': "Avez-vous subi une opération lourde du cœur, du cerveau ou de la moelle épinière ?",
+    'Q18': "Au cours des 12 derniers mois, avez-vous consommé de la drogue par le nez (snif) ?",
+    'Q24': "Au cours des 4 derniers mois, avez-vous fait un tatouage, un piercing ou du maquillage permanent ?",
+    'Q28': "Avez-vous perdu plus de 5 kg sans raison récemment ?",
+    'Q29': "Au cours des 2 dernières semaines, avez-vous eu la grippe ?",
+    'Q30': "Ces 7 derniers jours, êtes-vous allé chez le dentiste (détartrage, extraction) ?",
+    'Q32': "Ce mois-ci, avez-vous été mordu par une tique ?"
+  });
+
+  // --- LISTE DES MÉDICAMENTS SOUS EXCLUSION STRICTE ---
+  const medicationsList = [
+    { id: 'M1', name: "Chimiothérapie anti-cancéreuse", delay: "Définitive (À vie)" },
+    { id: 'M2', name: "Insuline (pour Diabète insulinodépendant)", delay: "Définitive (À vie)" },
+    { id: 'M3', name: "Acitrétine (Neotigason) / Étrétinate (Tegison)", delay: "3 ans" },
+    { id: 'M4', name: "Léflunomide (Arava) / Tériflunomide (Aubagio)", delay: "2 ans" },
+    { id: 'M5', name: "Dutastéride (Avodart, Combodart)", delay: "6 mois" },
+    { id: 'M6', name: "Méthotrexate / Immunosuppresseurs (Imuran, CellCept...)", delay: "6 mois" },
+    { id: 'M7', name: "Isotrétinoïne (Roaccutane) / Finastéride (Proscar)", delay: "1 mois (30 jours)" },
+    { id: 'M8', name: "Anticoagulants oraux (Xarelto, Eliquis, Pradaxa)", delay: "1 mois (30 jours)" },
+    { id: 'M9', name: "Cortisone (comprimés ou injection)", delay: "2 semaines (14 jours)" },
+    { id: 'M10', name: "Antibiotiques (pour infection active)", delay: "7 jours" }
+  ];
+
+  // --- ÉTAT MÉDECIN ---
+  const [medicalSearch, setMedicalSearch] = useState<string>('');
+  const medicalManualDocs = useMemo(() => [
+    { id: "MAN-01", title: "Sélection Médicale des Donneurs — Cadre Belge", content: "ETS La Transfusion du Sang de Charleroi (MED-SEM-SO-010). Basé sur la loi du 05/07/1994. Le poids minimum légal est de 50 kg. Une femme de 50 kg doit mesurer au moins 1m53. L'exclusion doit être définitive si la pathologie est grave ou active." },
+    { id: "MAN-02", title: "Pharmacotoxicité et Contre-indications Spécifiques", content: "L'anamnèse médicamenteuse protège le receveur des risques tératogènes et d'embryotoxicité. Exclusions à vie : Insuline, chimiothérapie. Exclusions temporaires majeures : Rétinoïdes (Neotigason 3 ans), Arava (2 ans), Roaccutane (1 mois), Proscar (1 mois)." },
+    { id: "MAN-03", title: "Risques Épidémiologiques Mondiaux (Voyages)", content: "Maladie de Chagas : Amérique Latine continentale. Écartement de 6 mois si séjour en plein air (camping, belle étoile) ou habitation précaire (briques d'adobe). Paludisme/Malaria : Écartement de 4 mois pour le sang total homologue (STHO) et 6 mois pour les plaquettes." }
+  ], []);
+
+  // --- LOGIQUE D'ÉLIGIBILITE MORPHOLOGIQUE (FORMULE DE NADLER & LOI) ---
+  const handlePhysicalCheck = (e: React.FormEvent) => {
+    e.preventDefault();
+    let eligible = true;
+    let reason = "";
+
+    // 1. Limites légales de base [2]
+    if (donor.age < 18 || donor.age >= 66) {
+      eligible = false;
+      reason = "L'âge légal doit être compris entre 18 ans et la veille du 66ème anniversaire pour un don homologue.";
+    } else if (donor.weight < 50) {
+      eligible = false;
+      reason = "Le poids minimum légal absolu est de 50 kg.";
+    } else if (donor.gender === 'F' && donor.weight === 50 && donor.height < 153) {
+      eligible = false;
+      reason = "Abaque Femme : à 50 kg, la donneuse doit mesurer au moins 1m53 pour ne pas prélever plus de 13% de sa masse sanguine.";
+    }
+
+    // 2. Calcul mathématique de l'Équation de Nadler [2]
+    // Conversion en mesures impériales requises par la formule : 1 cm = 0.3937 pouce, 1 kg = 2.2046 livres
+    const heightInInches = donor.height * 0.3937;
+    const weightInPounds = donor.weight * 2.2046;
+    
+    // Formule : (0.006012 x Taille³) + (14.6 x Poids) + 604 -> Donné en ml [2]
+    const calculatedVst = (0.006012 * Math.pow(heightInInches, 3)) + (14.6 * weightInPounds) + 604;
+    
+    // Le volume prélevé maximum toléré (Loi : maximum 13% du VST) [2]
+    const maxVolume = calculatedVst * 0.13;
+
+    setDonor({
+      ...donor,
+      eligibilityChecked: true,
+      isGloballyEligible: eligible,
+      rejectionReason: reason,
+      vst: Math.round(calculatedVst),
+      maxAllowedVolume: Math.round(maxVolume)
+    });
+  };
+
+  // --- RECHERCHE TEXTUELLE DU MÉDECIN ---
+  const highlightMedicalText = (text: string, search: string) => {
+    if (!search.trim()) return text;
+    const regex = new RegExp(`(${search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+    const parts = text.split(regex);
+    return (
+      <span>
+        {parts.map((part, i) => 
+          regex.test(part) ? <mark key={i} className="bg-yellow-300 text-black font-bold px-0.5 rounded">{part}</mark> : part
+        )}
+      </span>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+      <header className="bg-red-700 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-50">
+        <h1 className="text-xl font-bold tracking-wider flex items-center gap-2">🩸 BloodPass — Portails Transfusionnels</h1>
+        {currentSpace !== 'auth' && (
+          <button onClick={() => setCurrentSpace('auth')} className="bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            Déconnexion Espace
+          </button>
+        )}
+      </header>
+
+      <main className="max-w-4xl mx-auto p-4 md:p-6 pb-24">
+        
+        {/* ================= ÉCRAN D'AUTHENTIFICATION SIMULÉE ================= */}
+        {currentSpace === 'auth' && (
+          <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md mx-auto mt-16 border border-slate-100">
+            <h2 className="text-xl font-bold text-center text-slate-900 mb-2">Accès aux Espaces BloodPass</h2>
+            <p className="text-xs text-slate-400 text-center mb-6">Plateforme de facilité Transfusion connectée à Vercel.</p>
+            <div className="space-y-3">
+              <button onClick={() => setCurrentSpace('donor')} className="w-full bg-red-600 text-white p-3 rounded-xl font-medium hover:bg-red-700 transition flex justify-between items-center">
+                <span>Espace Candidat Donneur</span> <span>👤</span>
+              </button>
+              <button onClick={() => setCurrentSpace('doctor')} className="w-full bg-blue-700 text-white p-3 rounded-xl font-medium hover:bg-blue-800 transition flex justify-between items-center">
+                <span>Espace Médecin Référent</span> <span>🩺</span>
+              </button>
+              <button onClick={() => setCurrentSpace('admin')} className="w-full bg-slate-800 text-white p-3 rounded-xl font-medium hover:bg-slate-900 transition flex justify-between items-center">
+                <span>Espace Gestion Administrative</span> <span>⚙️</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= 1. ESPACE DONNEUR ================= */}
+        {currentSpace === 'donor' && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+              <h2 className="text-lg font-bold text-slate-900 mb-4">Inscription & Caractéristiques Morphologiques</h2>
+              <form onSubmit={handlePhysicalCheck} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase">Adresse Email</label>
