@@ -1,22 +1,32 @@
-'use client';
+ 'use client';
 import React, { useState } from 'react';
 
 export default function BloodPassApp() {
   const [space, setSpace] = useState('auth');
+  
+  // --- ÉTATS DU QUESTIONNAIRE INTERACTIF ---
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedResponse, setSelectedResponse] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [answersV9, setAnswersV9] = useState({});
   const [generatedCode, setGeneratedCode] = useState('');
   const [signatureName, setSignatureName] = useState('');
+
+  // --- ÉTATS MÉDECINS ET ADMIN ---
   const [activeSessions, setActiveSessions] = useState({});
   const [currentMedicalCode, setCurrentMedicalCode] = useState('');
   const [activeDoctorSession, setActiveDoctorSession] = useState(null);
   const [doctorName, setDoctorName] = useState('Dr. Renard');
-  const [doctors, setDoctors] = useState([{ email: 'chef@charleroi.be', name: 'Dr. Renard', inami: '12345678901', approved: true }]);
+  const [doctors, setDoctors] = useState([
+    { email: 'chef@charleroi.be', name: 'Dr. Renard', inami: '12345678901', approved: true }
+  ]);
   const [newDoc, setNewDoc] = useState({ name: '', email: '', inami: '' });
-  const [donor] = useState({ email: 'guerlency.mic13@charleroi.be', bloodGroup: 'O+', count: 5, badges: ['🥇 Premier Don', '🩸 Sauveur régulier'] });
+  const [donor] = useState({
+    email: 'guerlency.mic13@charleroi.be', bloodGroup: 'O+', count: 5,
+    badges: ['🥇 Premier Don', '🩸 Sauveur régulier']
+  });
 
+  // Questionnaire officiel V9 révisé de l'ETS de Charleroi
   const questionsV9 = [
     { id: 'Q1', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous déjà été transfusé(e) ou reçu une greffe ?" },
     { id: 'Q3', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous subi une opération lourde du cœur, du cerveau ou de la moëlle épinière ?" },
@@ -28,15 +38,28 @@ export default function BloodPassApp() {
   const handleNextQuestion = () => {
     if (!selectedResponse) return;
     setAnswersV9({ ...answersV9, [questionsV9[currentQuestionIndex].id]: { value: selectedResponse, comment: commentText } });
-    setSelectedResponse(null); setCommentText('');
-    if (currentQuestionIndex < questionsV9.length - 1) { setCurrentQuestionIndex(currentQuestionIndex + 1); }
-    else { setCurrentQuestionIndex(questionsV9.length); }
+    setSelectedResponse(null);
+    setCommentText('');
+    if (currentQuestionIndex < questionsV9.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      setCurrentQuestionIndex(questionsV9.length); // Écran de signature
+    }
   };
 
   const handleFinalizeTest = () => {
     if (!signatureName.trim()) return;
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setActiveSessions({ ...activeSessions, [code]: { donorInfo: { ...donor }, responses: { ...answersV9 }, signature: signatureName, time: new Date().toLocaleTimeString(), historyLogs: [{ action: "Questionnaire soumis", operator: "Donneur", time: new Date().toLocaleTimeString() }] } });
+    setActiveSessions({
+      ...activeSessions,
+      [code]: {
+        donorInfo: { ...donor },
+        responses: { ...answersV9 },
+        signature: signatureName,
+        time: new Date().toLocaleTimeString(),
+        historyLogs: [{ action: "Questionnaire pré-don signé", operator: "Donneur", time: new Date().toLocaleTimeString() }]
+      }
+    });
     setGeneratedCode(code);
   };
 
@@ -44,76 +67,73 @@ export default function BloodPassApp() {
     if (!activeDoctorSession) return;
     const updated = { ...activeDoctorSession };
     updated.responses[qId][field] = value;
-    updated.historyLogs.push({ action: `Modif ${qId} -> ${field}: "${value}"`, operator: doctorName, time: new Date().toLocaleTimeString() });
-    setActiveDoctorSession(updated); setActiveSessions({ ...activeSessions, [currentMedicalCode]: updated });
+    updated.historyLogs.push({ action: `Modification ${qId} (${field}: ${value})`, operator: doctorName, time: new Date().toLocaleTimeString() });
+    setActiveDoctorSession(updated);
+    setActiveSessions({ ...activeSessions, [currentMedicalCode]: updated });
   };
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '16px', backgroundColor: '#f8fafc', minHeight: '100vh', color: '#0f172a' }}>
-      <header style={{ maxWidth: '480px', margin: '0 auto 24px auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '16px 20px', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
-        <h1 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>🩸 BloodPass Charleroi V9</h1>
-        {space !== 'auth' && <button onClick={() => { setSpace('auth'); setGeneratedCode(''); setCurrentQuestionIndex(0); setActiveDoctorSession(null); }} style={{ padding: '6px 14px', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '600' }}>Menu</button>}
+    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', padding: '24px 16px', backgroundColor: '#f8fafc', minHeight: '100vh', color: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      
+      {/* BARRE DE NAVIGATION FINE ET PREMIUM */}
+      <header style={{ width: '100%', maxWidth: '440px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '16px 20px', borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9', boxSizing: 'border-box', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '20px' }}>🩸</span>
+          <h1 style={{ fontSize: '16px', fontWeight: '700', margin: 0, letterSpacing: '-0.3px' }}>BloodPass <span style={{ color: '#dc2626', fontWeight: '800' }}>V9</span></h1>
+        </div>
+        {space !== 'auth' && (
+          <button onClick={() => { setSpace('auth'); setGeneratedCode(''); setCurrentQuestionIndex(0); setActiveDoctorSession(null); }} style={{ padding: '6px 14px', backgroundColor: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Menu</button>
+        )}
       </header>
 
+      {/* 1. ÉCRAN D'ACCUEIL DES PORTAILS STYLE "SHADCN" */}
       {space === 'auth' && (
-        <div style={{ maxWidth: '400px', margin: '40px auto', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <button onClick={() => setSpace('donor_home')} style={{ width: '100%', backgroundColor: '#ffffff', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', textAlign: 'left' }}>👤 Portail Personnel Donneur</button>
-          <button onClick={() => setSpace('doctor_auth')} style={{ width: '100%', backgroundColor: '#ffffff', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', textAlign: 'left' }}>🩺 Espace Médecin Référent</button>
-          <button onClick={() => setSpace('admin')} style={{ width: '100%', backgroundColor: '#ffffff', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', textAlign: 'left' }}>⚙️ Gestion Administrateur (1-Clic)</button>
-        </div>
-      )}
+        <div style={{ width: '100%', maxWidth: '440px', animation: 'fadeIn 0.3s ease' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.6px', marginBottom: '6px', textAlign: 'center' }}>Portails Établissement</h2>
+          <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '32px', textAlign: 'center' }}>ETS de Charleroi — Outils de suivi d'hémovigilance.</p>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <button onClick={() => setSpace('donor_home')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#0f172a', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '24px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 4px rgba(0,0,0,0.01)', textAlign: 'left', transition: 'transform 0.2s' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <span style={{ fontSize: '22px', backgroundColor: '#fee2e2', padding: '10px', borderRadius: '16px' }}>👤</span>
+                <div><p style={{ margin: 0, fontWeight: '700' }}>Portail Candidat Donneur</p><span style={{ fontSize: '12px', color: '#64748b', fontWeight: '400' }}>Consulter mes badges & faire le test V9</span></div>
+              </div>
+              <span style={{ color: '#94a3b8' }}>➔</span>
+            </button>
 
-      {space === 'donor_home' && (
-        <div style={{ maxWidth: '440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', color: 'white', padding: '24px', borderRadius: '24px' }}>
-            <h3 style={{ margin: 0 }}>{donor.email}</h3>
-            <p style={{ margin: '4px 0 0 0', fontSize: '20px', fontWeight: '800' }}>Groupe : {donor.bloodGroup}</p>
-            <button onClick={() => setSpace('eligibility_test')} style={{ width: '100%', backgroundColor: '#dc2626', color: 'white', padding: '14px', border: 'none', borderRadius: '16px', cursor: 'pointer', fontWeight: '700', marginTop: '15px' }}>PASSER LE TEST D'ÉLIGIBILITÉ V9</button>
+            <button onClick={() => setSpace('doctor_auth')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#0f172a', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '24px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <span style={{ fontSize: '22px', backgroundColor: '#e0f2fe', padding: '10px', borderRadius: '16px' }}>🩺</span>
+                <div><p style={{ margin: 0, fontWeight: '700' }}>Espace Médecin Référent</p><span style={{ fontSize: '12px', color: '#64748b', fontWeight: '400' }}>Ouvrir et rectifier un questionnaire pré-don</span></div>
+              </div>
+              <span style={{ color: '#94a3b8' }}>➔</span>
+            </button>
+
+            <button onClick={() => setSpace('admin')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#0f172a', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '24px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <span style={{ fontSize: '22px', backgroundColor: '#f1f5f9', padding: '10px', borderRadius: '16px' }}>⚙️</span>
+                <div><p style={{ margin: 0, fontWeight: '700' }}>Gestion Administrateur</p><span style={{ fontSize: '12px', color: '#64748b', fontWeight: '400' }}>Habilitations médicales et validation 1-clic</span></div>
+              </div>
+              <span style={{ color: '#94a3b8' }}>➔</span>
+            </button>
           </div>
         </div>
       )}
 
-      {space === 'eligibility_test' && !generatedCode && (
-        <div style={{ maxWidth: '440px', margin: '20px auto', backgroundColor: '#ffffff', padding: '24px', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
-          {currentQuestionIndex < questionsV9.length ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <p style={{ fontSize: '16px', fontWeight: '700' }}>{questionsV9[currentQuestionIndex].id}. {questionsV9[currentQuestionIndex].text}</p>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={() => setSelectedResponse('OUI')} style={{ flex: 1, padding: '12px', border: selectedResponse === 'OUI' ? '2px solid #dc2626' : '1px solid #e2e8f0', borderRadius: '12px' }}>Oui</button>
-                <button onClick={() => setSelectedResponse('NON')} style={{ flex: 1, padding: '12px', border: selectedResponse === 'NON' ? '2px solid #0f172a' : '1px solid #e2e8f0', borderRadius: '12px' }}>Non</button>
+      {/* 2. ESPACE PERSONNEL DU DONNEUR */}
+      {space === 'donor_home' && (
+        <div style={{ width: '100%', maxWidth: '440px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* CARTE VIRTUELLE DESIGN NOKIA TECH/APPLE */}
+          <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', color: 'white', padding: '24px', borderRadius: '28px', boxShadow: '0 10px 25px -5px rgba(15,23,42,0.12)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.5 }}>Donneur Enregistré</p>
+                <h3 style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.3px' }}>{donor.email}</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.8 }}>{donor.count} dons effectués à l'ETS</p>
               </div>
-              {selectedResponse === 'OUI' && <input type="text" value={commentText} onChange={e => setCommentText(e.target.value)} placeholder="Précisions obligatoires (Dates, lieux...)" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />}
-              <button onClick={handleNextQuestion} disabled={!selectedResponse} style={{ width: '100%', backgroundColor: '#0f172a', color: 'white', padding: '12px', borderRadius: '12px', cursor: 'pointer' }}>Suivant ➔</button>
+              <div style={{ background: 'rgba(255,255,255,0.1)', padding: '10px 16px', borderRadius: '16px', fontSize: '22px', fontWeight: '800', border: '1px solid rgba(255,255,255,0.1)' }}>{donor.bloodGroup}</div>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h3>Signature de l'attestation</h3>
-              <input type="text" value={signatureName} onChange={e => setSignatureName(e.target.value)} placeholder="Prénom et Nom" style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1' }} />
-              <button onClick={handleFinalizeTest} disabled={!signatureName.trim()} style={{ width: '100%', backgroundColor: '#16a34a', color: 'white', padding: '12px', borderRadius: '12px' }}>OBTENIR MON CODE CONFIDENTIEL</button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {space === 'eligibility_test' && generatedCode && (
-        <div style={{ maxWidth: '400px', margin: '40px auto', backgroundColor: '#ffffff', padding: '24px', borderRadius: '24px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-          <h3>Code Entretien Médecin (Valable 12h)</h3>
-          <div style={{ backgroundColor: '#0f172a', color: '#ffffff', fontSize: '32px', padding: '16px', borderRadius: '16px', fontFamily: 'monospace', letterSpacing: '4px' }}>{generatedCode}</div>
-        </div>
-      )}
-
-      {space === 'doctor_auth' && (
-        <div style={{ maxWidth: '440px', margin: '0 auto', backgroundColor: '#ffffff', padding: '24px', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
-          {!activeDoctorSession ? (
-            <form onSubmit={handleDoctorAccess} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <input required placeholder="Entrer le code à 6 chiffres" value={currentMedicalCode} onChange={e => setCurrentMedicalCode(e.target.value)} style={{ padding: '12px', textAlign: 'center', fontSize: '16px' }} />
-              <button type="submit" style={{ backgroundColor: '#0284c7', color: 'white', padding: '12px', borderRadius: '12px' }}>OUVRIR DOSSIER</button>
-            </form>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <h3>Examen : {activeDoctorSession.donorInfo.email}</h3>
-              {questionsV9.map(q => {
-                const ans = activeDoctorSession.responses[q.id] || { value: 'NON', comment: '' };
-                return (
-                  <div key={q.id} style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                    <p style={{ margin: 0 }}><strong>[{q.id}]</strong> {q.text}</p>
+            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', opacity: 0.5 }}>Insignes obtenus</p>
+              <div style={{ display: 'flex', gap: '6px' }}>
