@@ -1,8 +1,15 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 export default function BloodPassApp() {
   const [space, setSpace] = useState('auth');
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedResponse, setSelectedResponse] = useState(null);
+  const [commentText, setCommentText] = useState('');
+  const [answersV9, setAnswersV9] = useState({});
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [signatureName, setSignatureName] = useState('');
+
   const [doctors, setDoctors] = useState([
     { email: 'chef@charleroi.be', name: 'Dr. Renard', inami: '12345678901', approved: true }
   ]);
@@ -12,70 +19,127 @@ export default function BloodPassApp() {
     badges: ['🥇 Premier Don', '🩸 Sauveur régulier']
   });
 
+  // Questionnaire officiel abrégé V9 de l'ETS de Charleroi
+  const questionsV9 = [
+    { id: 'Q1', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous déjà été transfusé(e) ou reçu une greffe ?" },
+    { id: 'Q3', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous subi une opération lourde du cœur, du cerveau ou de la moëlle épinière ?" },
+    { id: 'Q6', section: 'MÉDICAMENTS', text: "Prenez-vous un traitement pour un diabète insulinodépendant (Insuline) ?" },
+    { id: 'Q20', section: 'VACCINS', text: "Avez-vous reçu un vaccin ou un rappel de vaccination au cours des 30 derniers jours ?" },
+    { id: 'Q36', section: 'VOYAGES', text: "Au cours des 6 derniers mois, avez-vous voyagé ou séjourné en dehors de la Belgique ?" }
+  ];
+
+  const handleNextQuestion = () => {
+    if (!selectedResponse) return;
+    
+    setAnswersV9({
+      ...answersV9,
+      [questionsV9[currentQuestionIndex].id]: {
+        value: selectedResponse,
+        comment: commentText
+      }
+    });
+
+    setSelectedResponse(null);
+    setCommentText('');
+
+    if (currentQuestionIndex < questionsV9.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      setCurrentQuestionIndex(questionsV9.length); // Passe à l'écran de signature
+    }
+  };
+
+  const handleFinalizeTest = () => {
+    if (!signatureName.trim()) return;
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedCode(code);
+  };
+
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '20px', backgroundColor: '#f1f5f9', minHeight: '100vh' }}>
-      <header style={{ backgroundColor: '#991b1b', color: 'white', padding: '15px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h2 style={{ margin: 0 }}>🩸 BloodPass Charleroi V9</h2>
-        <button onClick={() => setSpace('auth')} style={{ padding: '8px 16px', backgroundColor: 'white', color: '#991b1b', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>Menu</button>
+    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', padding: '16px', backgroundColor: '#f8fafc', minHeight: '100vh', color: '#0f172a' }}>
+      
+      {/* HEADER MINIMALISTE ET ÉPURÉ */}
+      <header style={{ maxWidth: '480px', margin: '0 auto 24px auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '16px 20px', borderRadius: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '20px' }}>🩸</span>
+          <h1 style={{ fontSize: '16px', fontWeight: '700', margin: 0, letterSpacing: '-0.3px', color: '#1e293b' }}>BloodPass <span style={{ color: '#dc2626', fontWeight: '800' }}>V9</span></h1>
+        </div>
+        {space !== 'auth' && (
+          <button onClick={() => { setSpace('auth'); setGeneratedCode(''); setCurrentQuestionIndex(0); }} style={{ padding: '6px 14px', backgroundColor: '#f1f5f9', color: '#475569', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: '600', transition: 'all 0.2s' }}>Quitter</button>
+        )}
       </header>
 
+      {/* 1. ÉCRAN D'ACCUEIL PORTAILS (DESIGN APPLE/SHADCN) */}
       {space === 'auth' && (
-        <div style={{ maxWidth: '350px', margin: '40px auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <button onClick={() => setSpace('donor')} style={{ backgroundColor: '#dc2626', color: 'white', padding: '15px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>PORTAIL DONNEUR</button>
-          <button onClick={() => setSpace('register')} style={{ backgroundColor: '#2563eb', color: 'white', padding: '15px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>INSCRIPTION MÉDECIN</button>
-          <button onClick={() => setSpace('admin')} style={{ backgroundColor: '#1e293b', color: 'white', padding: '15px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>ESPACE ADMIN (1-CLIC)</button>
-        </div>
-      )}
-
-      {space === 'donor' && (
-        <div style={{ maxWidth: '400px', margin: '20px auto', backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <div style={{ backgroundColor: '#b91c1c', color: 'white', padding: '15px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div><h3 style={{ margin: 0 }}>{donor.email}</h3><p style={{ margin: 0, fontSize: '12px', opacity: 0.9 }}>{donor.count} dons effectués</p></div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{donor.bloodGroup}</div>
-          </div>
-          <div>
-            <p style={{ fontWeight: 'bold', color: '#64748b', fontSize: '12px', margin: '0 0 8px 0' }}>🏅 VOS BADGES :</p>
-            {donor.badges.map((b, i) => <span key={i} style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', marginRight: '5px', display: 'inline-block' }}>{b}</span>)}
-          </div>
-          <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '15px', marginTop: '10px' }}>
-            <p style={{ fontWeight: 'bold', color: '#475569', fontSize: '13px', margin: '0 0 10px 0' }}>📅 Planifier un don (Délai 62 jours OK) :</p>
-            <button onClick={() => alert("Rendez-vous sauvegardé sur Supabase et SMS envoyé via Twilio.")} style={{ width: '100%', backgroundColor: '#dc2626', color: 'white', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', uppercase: 'true' }}>RENDEZ-VOUS & SMS RAPPEL</button>
-          </div>
-        </div>
-      )}
-
-      {space === 'register' && (
-        <div style={{ maxWidth: '350px', margin: '20px auto', backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ color: '#475569', margin: '0 0 15px 0' }}>Inscription Praticien</h3>
-          <form onSubmit={(e) => { e.preventDefault(); setDoctors([...doctors, { ...newDoc, approved: false }]); setNewDoc({ name: '', email: '', inami: '' }); alert("Demande enregistrée."); }} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <input required placeholder="Nom du médecin" value={newDoc.name} onChange={e => setNewDoc({ ...newDoc, name: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-            <input required type="email" placeholder="Email académique" value={newDoc.email} onChange={e => setNewDoc({ ...newDoc, email: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-            <input required placeholder="N° INAMI (11 chiffres)" value={newDoc.inami} onChange={e => setNewDoc({ ...newDoc, inami: e.target.value })} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
-            <button type="submit" style={{ backgroundColor: '#2563eb', color: 'white', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>SOUMETTRE</button>
-          </form>
-        </div>
-      )}
-
-      {space === 'admin' && (
-        <div style={{ maxWidth: '450px', margin: '20px auto', backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ color: '#475569', margin: '0 0 15px 0' }}>Approbation Médecins (1-Clic)</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {doctors.map((d, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <div><p style={{ margin: 0, fontWeight: 'bold' }}>{d.name}</p><p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>INAMI: {d.inami}</p></div>
+        <div style={{ maxWidth: '400px', margin: '40px auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.6px', marginBottom: '8px', color: '#0f172a' }}>Espaces de Connexion</h2>
+          <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '32px' }}>Sélectionnez votre portail applicatif pour l'ETS Charleroi.</p>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <button onClick={() => setSpace('donor_home')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#0f172a', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px', backgroundColor: '#fee2e2', padding: '8px', borderRadius: '14px' }}>👤</span>
                 <div>
-                  {d.approved ? <span style={{ color: '#16a34a', fontWeight: 'bold', fontSize: '13px' }}>✓ ACTIF</span> : (
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <button onClick={() => { const updated = [...doctors]; updated[i].approved = true; setDoctors(updated); alert("Médecin approuvé sur Supabase."); }} style={{ backgroundColor: '#16a34a', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Accepter</button>
-                      <button onClick={() => { setDoctors(doctors.filter((_, idx) => idx !== i)); alert("Demande rejetée."); }} style={{ backgroundColor: '#dc2626', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>Refuser</button>
-                    </div>
-                  )}
+                  <p style={{ margin: 0 }}>Portail Personnel Donneur</p>
+                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '400' }}>Consulter mes badges & faire le test</span>
                 </div>
               </div>
-            ))}
+              <span style={{ color: '#cbd5e1', fontSize: '18px' }}>➔</span>
+            </button>
+
+            <button onClick={() => setSpace('register')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#0f172a', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px', backgroundColor: '#dbeafe', padding: '8px', borderRadius: '14px' }}>🩺</span>
+                <div>
+                  <p style={{ margin: 0 }}>Inscription Praticien</p>
+                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '400' }}>Enregistrer un nouveau médecin médecin</span>
+                </div>
+              </div>
+              <span style={{ color: '#cbd5e1', fontSize: '18px' }}>➔</span>
+            </button>
+
+            <button onClick={() => setSpace('admin')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#0f172a', padding: '20px', border: '1px solid #e2e8f0', borderRadius: '20px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px', backgroundColor: '#f1f5f9', padding: '8px', borderRadius: '14px' }}>⚙️</span>
+                <div>
+                  <p style={{ margin: 0 }}>Espace Admin Référent</p>
+                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '400' }}>Contrôle et validation INAMI 1-clic</span>
+                </div>
+              </div>
+              <span style={{ color: '#cbd5e1', fontSize: '18px' }}>➔</span>
+            </button>
           </div>
         </div>
       )}
-    </div>
-  );
-}
+
+      {/* 2. ESPACE PERSONNEL DONNEUR */}
+      {space === 'donor_home' && (
+        <div style={{ maxWidth: '440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* Carte de donneur technologique moderne */}
+          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', color: 'white', padding: '24px', borderRadius: '24px', boxShadow: '0 10px 25px -5px rgba(15,23,42,0.15)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.6 }}>Carte Digitale Transfusionnelle</p>
+                <h3 style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', letterSpacing: '-0.4px' }}>{donor.email}</h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.8 }}>{donor.count} prélèvements validés</p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', padding: '10px 16px', borderRadius: '16px', fontSize: '22px', fontWeight: '800', border: '1px solid rgba(255,255,255,0.1)' }}>
+                {donor.bloodGroup}
+              </div>
+            </div>
+            
+            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.6 }}>Mérites & Fidélité</p>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {donor.badges.map((b, i) => <span key={i} style={{ backgroundColor: 'rgba(255,255,255,0.08)', padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: '600' }}>{b}</span>)}
+              </div>
+            </div>
+          </div>
+
+          {/* Statut temporel et bouton de lancement du TEST */}
+          <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <p style={{ margin: 0, fontWeight: '700', fontSize: '14px', color: '#475569' }}>Délai réglementaire de 62 jours</p>
+              <span style={{ backgroundColor: '#dcfce7', color: '#16a34a', padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700' }}>Conforme</span>
+            </div>
