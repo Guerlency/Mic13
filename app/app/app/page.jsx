@@ -11,18 +11,38 @@ export default function BloodPassApp() {
   const [activeDoctorSession, setActiveDoctorSession] = useState(null);
   const [doctorName, setDoctorName] = useState('Dr. Renard');
 
-  // --- ÉTAT DU DONNEUR & QUESTIONNAIRE DÉROULANT V9 ---
+  // --- ÉTAT DU DONNEUR, HISTORIQUE ET QUESTIONNAIRE ---
   const [donor, setDonor] = useState({
-    email: '', postalCode: '', phone: '', age: 0, weight: 0, height: 0, gender: 'F',
-    donationType: 'STHO', eligibilityChecked: false, isGloballyEligible: true, rejectionReason: '',
-    vst: 0, maxAllowedVolume: 0, generatedCode: '',
-    residueConsent: null, donorSignature: '', doctorSignature: '',
-    medicalConclusion: '', exclusionType: 'Temporaire'
+    email: 'guerlency.mic13@charleroi.be', 
+    postalCode: '6000', 
+    phone: '0470123456', 
+    age: 24, 
+    weight: 68, 
+    height: 172, 
+    gender: 'M',
+    donationType: 'STHO', 
+    bloodGroup: 'O+',
+    eligibilityChecked: false, 
+    isGloballyEligible: true, 
+    rejectionReason: '',
+    vst: 0, 
+    maxAllowedVolume: 0, 
+    generatedCode: '',
+    residueConsent: null, 
+    donorSignature: '', 
+    doctorSignature: '',
+    medicalConclusion: '', 
+    exclusionType: 'Temporaire',
+    // Historique factuel simulé pour la page d'accueil
+    pastDonations: [
+      { id: 'DON-901', date: '14/05/2026', type: 'Sang Total', location: 'Maison du Don - Loverval', status: 'Validé' },
+      { id: 'DON-742', date: '10/01/2026', type: 'Sang Total', location: 'Centre Hospitalier de Charleroi', status: 'Validé' }
+    ]
   });
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  // Formulaire officiel complet GEN-DOC-FO-01A V9 (Extraits Questions 1 à 36)
+  // Formulaire officiel complet GEN-DOC-FO-01A V9
   const initialQuestionsV9 = [
     { id: 'Q1', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous été transfusé(e) ou reçu une greffe ?", type: 'date_place' },
     { id: 'Q3', section: 'SANTÉ', text: "Au cours de votre vie, avez-vous eu une opération du cerveau, du cœur ou de la moëlle épinière ?", type: 'date_place' },
@@ -73,7 +93,6 @@ export default function BloodPassApp() {
     });
   };
 
-  // --- SAUVEGARDE ET GÉNÉRATION DU CODE ---
   const saveQuestionnaireAndGenerateCode = () => {
     const codeUnique = Math.floor(100000 + Math.random() * 900000).toString();
     const expirationTime = Date.now() + (12 * 60 * 60 * 1000);
@@ -82,7 +101,7 @@ export default function BloodPassApp() {
       donorInfo: { ...donor },
       responses: { ...answersV9 },
       historyLogs: [
-        { action: "Soumission du questionnaire avec choix de consentement résidus", timestamp: new Date().toLocaleTimeString(), operator: "Donneur" }
+        { action: "Soumission du questionnaire médical", timestamp: new Date().toLocaleTimeString(), operator: "Donneur" }
       ],
       expiresAt: expirationTime
     };
@@ -115,7 +134,6 @@ export default function BloodPassApp() {
     }
   };
 
-  // --- CONSOLE MÉDECIN SÉCURISÉE ---
   const handleDoctorAccess = (e) => {
     e.preventDefault();
     const targetSession = activeSessions[currentMedicalCode];
@@ -125,69 +143,38 @@ export default function BloodPassApp() {
 
   const updateQuestionByDoctor = (qId, field, value) => {
     const updatedSession = { ...activeDoctorSession };
-    const prev = updatedSession.responses[qId][field];
     updatedSession.responses[qId][field] = value;
-    updatedSession.historyLogs.push({
-      action: `Correction Question ${qId} -> champ [${field}] (Ancien: "${prev}" -> Nouveau: "${value}")`,
-      timestamp: new Date().toLocaleTimeString(),
-      operator: doctorName
-    });
     setActiveDoctorSession(updatedSession);
-    setActiveSessions({ ...activeSessions, [currentMedicalCode]: updatedSession });
   };
 
   const finalizeConclusionByDoctor = (field, value) => {
     const updatedSession = { ...activeDoctorSession };
     updatedSession.donorInfo[field] = value;
-    updatedSession.historyLogs.push({
-      action: `Mise à jour Section Clinique -> [${field}] fixé à "${value}"`,
-      timestamp: new Date().toLocaleTimeString(),
-      operator: doctorName
-    });
     setActiveDoctorSession(updatedSession);
-    setActiveSessions({ ...activeSessions, [currentMedicalCode]: updatedSession });
   };
 
-  // --- TRAÇABILITÉ DES ALERTES EN TEMPS RÉEL (ESPACE MÉDECIN) ---
   const clinicalAlerts = useMemo(() => {
     if (!activeDoctorSession) return [];
     const alerts = [];
-
-    // Alerte Voyage (MED-SEM-LI-02A)
     if (activeDoctorSession.responses['Q36']?.value === 'OUI') {
-      const lieu = activeDoctorSession.responses['Q36']?.place || "non spécifié";
-      alerts.push({
-        type: 'ORANGE',
-        msg: `Alerte Épidémiologique : Séjour à l'étranger déclaré (${lieu}). Vérifier la base géographique pour fixer le délai d'écartement (ex: 4 mois si zone Paludisme).`
-      });
+      alerts.push({ type: 'ORANGE', msg: `Alerte Épidémiologique : Séjour à l'étranger déclaré (${activeDoctorSession.responses['Q36']?.place || "non spécifié"}).` });
     }
-
-    // Alerte Vaccin (Chapitre 4)
     if (activeDoctorSession.responses['Q20']?.value === 'OUI') {
-      alerts.push({
-        type: 'ORANGE',
-        msg: "Alerte Vaccination : Antécédent de vaccin récent. Écarter de 4 semaines s'il s'agit d'un vaccin viral atténué (Fièvre Jaune, Dengue, RRO) ou de 48h si bactérien."
-      });
+      alerts.push({ type: 'ORANGE', msg: "Alerte Vaccination : Antécédent de vaccin récent (Délai à vérifier)." });
     }
-
-    // Alerte Critique Exclusion à vie
     if (activeDoctorSession.responses['Q6']?.value === 'OUI') {
-      alerts.push({
-        type: 'RED',
-        msg: "CRITÈRE D'EXCLUSION ABSOLUE : Diabète traité par insuline. Écartement définitif obligatoire pour la protection du donneur."
-      });
+      alerts.push({ type: 'RED', msg: "CRITÈRE D'EXCLUSION ABSOLUE : Diabète traité par insuline." });
     }
-
     return alerts;
   }, [activeDoctorSession]);
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800">
       <header className="bg-red-800 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 className="text-sm font-bold">🩸 BloodPass ASBL — Console d'Entretien de Sélection</h1>
+        <h1 className="text-sm font-bold">🩸 BloodPass — Portail de Transfusion de Charleroi</h1>
         {currentSpace !== 'auth' && (
           <button onClick={() => { setCurrentSpace('auth'); setActiveDoctorSession(null); }} className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded-lg text-xs transition">
-            Menu Principal
+            Déconnexion
           </button>
         )}
       </header>
@@ -195,19 +182,29 @@ export default function BloodPassApp() {
       <main className="max-w-2xl mx-auto p-4 md:p-6">
         {currentSpace === 'auth' && (
           <div className="bg-white p-6 rounded-2xl shadow-xl max-w-sm mx-auto mt-16 border border-slate-200">
-            <h2 className="text-md font-bold text-center text-slate-900 mb-4">Portails Réglementaires</h2>
+            <h2 className="text-md font-bold text-center text-slate-900 mb-4">Accès Portails BloodPass</h2>
             <div className="space-y-3">
-              <button onClick={() => setCurrentSpace('donor')} className="w-full bg-red-600 text-white p-3 rounded-xl text-xs font-bold uppercase hover:bg-red-700 transition flex justify-between items-center">
-                <span>Espace Candidat Donneur</span> <span>👤</span>
+              <button onClick={() => setCurrentSpace('donor_home')} className="w-full bg-red-600 text-white p-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-red-700 transition flex justify-between items-center">
+                <span>Espace Personnel Donneur</span> <span>👤</span>
               </button>
-              <button onClick={() => setCurrentSpace('doctor')} className="w-full bg-blue-700 text-white p-3 rounded-xl text-xs font-bold uppercase hover:bg-blue-800 transition flex justify-between items-center">
+              <button onClick={() => setCurrentSpace('doctor')} className="w-full bg-blue-700 text-white p-3 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-blue-800 transition flex justify-between items-center">
                 <span>Espace Médecin Référent</span> <span>🩺</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* ================= ESPACE DONNEUR ================= */}
-        {currentSpace === 'donor' && (
-          <div className="space-y-6">
-            {!donor.eligibilityChecked ? (
+        {/* ================= NEW MODULE : PAGE D'ACCUEIL PERSONNALISÉE DONNEUR ================= */}
+        {currentSpace === 'donor_home' && (
+          <div className="space-y-5">
+            {/* Carte d'identité numérique du donneur */}
+            <div className="bg-gradient-to-r from-red-700 to-rose-600 text-white p-5 rounded-2xl shadow-md flex justify-between items-center">
+              <div>
+                <p className="text-3xs uppercase tracking-widest text-red-200 font-bold">Carte de Donneur Virtuelle</p>
+                <h2 className="text-md font-bold mt-1">{donor.email}</h2>
+                <div className="flex gap-4 mt-3 text-3xs text-red-100 font-medium">
+                  <p>CP : <strong className="text-white">{donor.postalCode}</strong></p>
+                  <p>ID : <strong className="text-white">#BP-62802</strong></p>
+                </div>
+              </div>
+              <div className="bg-white text-red-700 font-mono text-xl font-bold w-12 h-12 rounded-full flex items-center justify-center shadow-md">
