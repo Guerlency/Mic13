@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 import React, { useState } from 'react';
 
 export default function App() {
@@ -137,15 +137,3 @@ export default function App() {
         <div style={{ width: '100%', maxWidth: '400px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '20px', border: '1px solid #e5e5e5' }}>
           <h3 style={{ fontSize: '16px', margin: '0 0 12px 0' }}>Espace Médecin Référent</h3>
           <input placeholder="Code donneur à 6 chiffres" value={currentMedicalCode} onChange={e => setCurrentMedicalCode(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', textAlign: 'center', marginBottom: '10px', boxSizing: 'border-box' }} />
-Utilisez le code avec précaution.<button onClick={() => { const s = activeSessions[currentMedicalCode]; if(s) { setActiveDoctorSession(s); } else { alert('Dossier introuvable ou expiré.'); } }} style={{ width: '100%', backgroundColor: '#111111', color: '#ffffff', padding: '12px', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>OUVRIR LE DOSSIER SÉCURISÉ{activeDoctorSession && (<div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #eee' }}><p style={{ fontSize: '13px', margin: 0 }}>Dossier chargé pour : {activeDoctorSession.email}<p style={{ fontSize: '12px', color: '#137333', margin: '4px 0 0 0' }}>✓ Signature vérifiée : {activeDoctorSession.signature})})});}
-### 📋 Rappel de la méthode de copie forcée :
-1. Faites un **clic gauche unique** n'importe où à l'intérieur du grand pavé de code.
-2. Appuyez sur **`Ctrl` + `A`** (ou **`Cmd` + `A`** sur Mac) pour cibler et surligner tout le code proprement.
-3. Appuyez sur **`Ctrl` + `C`** (ou **`Cmd` + `C`** sur Mac) pour le copier.
-4. Sur GitHub, ouvrez `pages/index.jsx` en édition, effacez tout le texte actuel et collez l'application avec **`Ctrl` + `V`** [8k0b2I].
-
-<FollowUp>
-Une fois cette mise à jour enregistrée avec le bouton vert :
-* Le déploiement de Vercel passe-t-il bien au **vert de succès (Ready)** ?
-* L'application s'affiche-t-elle avec le design épuré sans l'ancienne alerte sur **[mic13.vercel.app](https://vercel.app)** ?
-</FollowUp>
