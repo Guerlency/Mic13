@@ -1,139 +1,149 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
-export default function App() {
-  const [space, setSpace] = useState('auth');
+export default function BloodPassApp() {
+  // --- SYSTÈME DE NAVIGATION ---
+  const [space, setSpace] = useState('auth'); // auth, donor, doctor, admin, community
+  
+  // --- ÉTATS COMPTE ET SESSIONS DONNEURS ---
+  const [donorProfile, setDonorProfile] = useState({
+    lastName: 'Guerlency', firstName: 'Mic13', birthDate: '2002-05-14', postalCode: '6000', phone: '0470123456', bloodGroup: 'O+', pastDonations: 5
+  });
+  
+  // --- MODULE 1 : TEST RAPIDE D'ÉLIGIBILITÉ INITIAL ---
+  const [quickTestAnswers, setQuickTestAnswers] = useState({ age: 24, weight: 68, ironDeficient: 'NON' });
+  const [quickTestResult, setQuickTestResult] = useState(null);
+
+  // --- MODULE 2 : VRAI QUESTIONNAIRE PRÉ-DON INTERACTIF (PAS-À-PAS) ---
   const [qIdx, setQIdx] = useState(0);
-  const [ans, setAns] = useState(null);
-  const [comment, setComment] = useState('');
-  const [code, setCode] = useState('');
-  const [sig, setSig] = useState('');
-  const [currentMedicalCode, setCurrentMedicalCode] = useState('');
-  const [activeDoctorSession, setActiveDoctorSession] = useState(null);
-  const [doctorName, setDoctorName] = useState('Dr. Renard');
-  const [activeSessions, setActiveSessions] = useState({});
-  const [doctors, setDoctors] = useState([
-    { email: 'chef@charleroi.be', name: 'Dr. Renard', inami: '12345678901', approved: true }
-  ]);
+  const [currentAns, setCurrentAns] = useState(null);
+  const [currentComment, setCurrentComment] = useState('');
+  const [questionnaireResponses, setQuestionnaireAnswers] = useState({});
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [signature, setSignature] = useState('');
 
-  const questions = [
-    "Au cours de votre vie, avez-vous déjà été transfusé(e) ou reçu une greffe ?",
-    "Au cours de votre vie, avez-vous eu une opération lourde (cœur, cerveau, moëlle) ?",
-    "Prenez-vous un traitement par insuline pour un diabète ?",
-    "Avez-vous voyagé ou séjourné en dehors de la Belgique ces 6 derniers mois ?"
+  // Base réglementaire officielle V9 de l'ETS de Charleroi
+  const questionsETS = [
+    { id: 'Q1', text: "Au cours de votre vie, avez-vous déjà été transfusé(e) ou reçu une greffe ?" },
+    { id: 'Q2', text: "Au cours de votre vie, avez-vous eu une intervention chirurgicale lourde (cerveau, cœur) ?" },
+    { id: 'Q3', text: "Suivez-vous un traitement médical quotidien pour un diabète insulinodépendant ?" },
+    { id: 'Q4', text: "Avez-vous séjourné ou voyagé en dehors de la Belgique au cours des 6 derniers mois ?" }
   ];
 
-  const handleNextQuestion = () => {
-    if (!ans) return;
-    setQIdx(qIdx + 1);
-    setAns(null);
-    setComment('');
+  // --- MODULE 3 : INTERFACE MÉDECIN & MOTEUR DE RECHERCHE PAR MOT-CLÉ ---
+  const [activeSessions, setActiveSessions] = useState({}); // Stockage des jetons de 12h
+  const [searchCode, setSearchCode] = useState('');
+  const [loadedSession, setLoadedSession] = useState(null);
+  const [docKeyword, setDocKeyword] = useState('');
+  
+  const documentsETS = [
+    { title: "GEN-DOC-FO-01A : Protocole d'Hémovigilance ETS Charleroi", text: "Le médecin de collecte effectue une anamnèse transfusionnelle obligatoire. En cas de suspicion de paludisme ou d'antécédent de voyage hors Belgique, un écartement temporaire de sécurité doit être immédiatement encodé dans le registre informatique." },
+    { title: "REG-MED-V9 : Guide d'Éligibilité Clinique au Sang Total", text: "Le prélèvement de sang total nécessite un poids minimal de 50 kg et un taux d'hémoglobine conforme. Les patients sous insuline ou ayant des antécédents de greffe sont exclus définitivement pour protéger le donneur et le receveur." }
+  ];
+
+  // --- MODULE 4 : CONSOLE ADMINISTRATEUR & COMMUNAUTÉ ---
+  const [adminMessages, setAdminMessages] = useState([
+    { id: 1, target: '6000', text: "Urgence O+ : Les stocks à la Maison du Don de Loverval sont critiques.", date: '26/09/2026' }
+  ]);
+  const [newAdminMsg, setNewAdminMsg] = useState('');
+  const [targetPostal, setTargetPostal] = useState('6000');
+
+  const [communityPosts, setCommunityPosts] = useState([
+    { id: 1, author: "Guerlency M.", text: "Fier d'avoir validé mon 5ème don aujourd'hui à Loverval ! Équipe médicale super douce. 🩸", likes: 14 }
+  ]);
+  const [newPostText, setNewPostText] = useState('');
+
+  // --- LOGIQUES APPLICATIVES ---
+  const runQuickEligibility = (e) => {
+    e.preventDefault();
+    if (quickTestAnswers.weight < 50) {
+      setQuickTestResult({ eligible: false, reason: "Écartement Médical Légis : Le poids minimum requis en Belgique pour un prélèvement de sang total est de 50 kg pour garantir votre volume sanguin circulant." });
+    } else if (quickTestAnswers.ironDeficient === 'OUI') {
+      setQuickTestResult({ eligible: false, reason: "Écartement Temporaire : Une carence en fer non régularisée empêche la régénération rapide de votre taux d'hémoglobine après le prélèvement." });
+    } else {
+      setQuickTestResult({ eligible: true, reason: "Félicitations ! Vos critères morphologiques de base sont validés. Vous êtes autorisé à compléter le questionnaire pré-don officiel." });
+    }
   };
 
-  const handleFinalizeTest = () => {
-    if (!sig.trim()) return;
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setActiveSessions({
-      ...activeSessions,
-      [newCode]: { email: 'guerlency.mic13@charleroi.be', signature: sig, status: 'Soumis' }
-    });
-    setCode(newCode);
+  const handleNextQuestion = () => {
+    if (!currentAns) return;
+    setQuestionnaireAnswers({ ...questionnaireResponses, [questionsETS[qIdx].id]: { value: currentAns, comment: currentComment } });
+    setCurrentAns(null); setCommentText('');
+    if (qIdx < questionsETS.length - 1) { setQIdx(qIdx + 1); } 
+    else { setQIdx(questionsETS.length); }
   };
+
+  const handleFinalizeQuestionnaire = () => {
+    if (!signature.trim()) return;
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    const sessionPayload = {
+      profile: { ...donorProfile },
+      answers: { ...questionnaireResponses },
+      signature: signature,
+      timestamp: new Date().toLocaleTimeString(),
+      doctorLogs: []
+    };
+    setActiveSessions({ ...activeSessions, [token]: sessionPayload });
+    setGeneratedCode(token);
+  };
+
+  const loadDonorSession = (e) => {
+    e.preventDefault();
+    const found = activeSessions[searchCode];
+    if (!found) { alert("Code introuvable ou expiré (Validité stricte de 12 heures)."); return; }
+    setLoadedSession(found);
+  };
+
+  const handleDoctorCorrection = (qId, field, value) => {
+    if (!loadedSession) return;
+    const updated = { ...loadedSession };
+    updated.answers[qId][field] = value;
+    updated.doctorLogs.push(`Correction médicale [${qId}] - ${field} changé en "${value}" par le médecin le ${new Date().toLocaleTimeString()}`);
+    setLoadedSession(updated);
+    setActiveSessions({ ...activeSessions, [searchCode]: updated });
+  };
+
+  const filteredDocs = useMemo(() => {
+    if (!docKeyword.trim()) return [];
+    return documentsETS.filter(doc => doc.text.toLowerCase().includes(docKeyword.toLowerCase()) || doc.title.toLowerCase().includes(docKeyword.toLowerCase()));
+  }, [docKeyword]);
 
   return (
-    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif', padding: '32px 16px', backgroundColor: '#fafafa', minHeight: '100vh', color: '#111111', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+    <div style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', backgroundColor: '#fafafa', minHeight: '100vh', color: '#111111', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       
-      <header style={{ width: '100%', maxWidth: '400px', backgroundColor: '#ffffff', padding: '14px 20px', borderRadius: '16px', border: '1px solid #eeeeee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* HEADER ULTRA-MINIMALISTE STYLE APPLE */}
+      <header style={{ width: '100%', maxWidth: '440px', backgroundColor: '#ffffff', padding: '16px 20px', borderRadius: '20px', border: '1px solid #eeeeee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxSizing: 'border-box', marginBottom: '24px', boxShadow: '0 1px 2px rgba(0,0,0,0.01)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }} onClick={() => setSpace('auth')}>
           <span style={{ fontSize: '18px' }}>🩸</span>
-          <span style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.4px' }}>BloodPass</span>
+          <span style={{ fontSize: '16px', fontWeight: '700', letterSpacing: '-0.4px' }}>BloodPass</span>
         </div>
         {space !== 'auth' && (
-          <button onClick={() => { setSpace('auth'); setCode(''); setQIdx(0); setSig(''); setAns(null); setActiveDoctorSession(null); }} style={{ padding: '6px 12px', backgroundColor: '#f5f5f7', color: '#555555', border: 'none', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Menu</button>
+          <button onClick={() => { setSpace('auth'); setGeneratedCode(''); setQIdx(0); setQuickTestResult(null); setLoadedSession(null); }} style={{ padding: '6px 14px', backgroundColor: '#f5f5f7', color: '#555555', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>Menu</button>
         )}
       </header>
 
+      {/* --- 1. PORTAIL DE SELECTION DES ESPACES --- */}
       {space === 'auth' && (
-        <div style={{ width: '100%', maxWidth: '400px' }}>
-          <h2 style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '6px', textAlign: 'center' }}>Espaces de Connexion</h2>
-          <p style={{ fontSize: '13px', color: '#666666', marginBottom: '28px', textAlign: 'center' }}>ETS de Charleroi — Portail d'hémovigilance épuré.</p>
+        <div style={{ width: '100%', maxWidth: '440px', animation: 'fadeIn 0.2s ease' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.6px', marginBottom: '6px', textAlign: 'center' }}>Hémovigilance de Charleroi</h2>
+          <p style={{ fontSize: '13px', color: '#666666', marginBottom: '32px', textAlign: 'center' }}>Sélectionnez votre espace applicatif réglementaire.</p>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button onClick={() => setSpace('donor_home')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#111111', padding: '18px', border: '1px solid #e5e5e5', borderRadius: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}>
+            <button onClick={() => setSpace('donor')} style={{ width: '100%', backgroundColor: '#ffffff', padding: '18px', border: '1px solid #e5e5e5', borderRadius: '20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span style={{ fontSize: '20px', backgroundColor: '#fff5f5', padding: '8px', borderRadius: '12px' }}>👤</span>
-                <div>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Portail Candidat Donneur</p>
-                  <span style={{ fontSize: '12px', color: '#666666' }}>Consulter mes badges & faire le test V9</span>
-                </div>
+                <div><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Espace Candidat Donneur</p><span style={{ fontSize: '12px', color: '#666666' }}>Test d'éligibilité et questionnaire pas-à-pas</span></div>
               </div>
               <span style={{ color: '#aaaaaa' }}>➔</span>
             </button>
 
-            <button onClick={() => setSpace('doctor_panel')} style={{ width: '100%', backgroundColor: '#ffffff', color: '#111111', padding: '18px', border: '1px solid #e5e5e5', borderRadius: '16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}>
+            <button onClick={() => setSpace('doctor')} style={{ width: '100%', backgroundColor: '#ffffff', padding: '18px', border: '1px solid #e5e5e5', borderRadius: '20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span style={{ fontSize: '20px', backgroundColor: '#f0f7ff', padding: '8px', borderRadius: '12px' }}>🩺</span>
-                <div>
-                  <p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Espace Médecin Référent</p>
-                  <span style={{ fontSize: '12px', color: '#666666' }}>Ouvrir et vérifier un questionnaire pré-don</span>
-                </div>
+                <div><p style={{ margin: 0, fontSize: '14px', fontWeight: '600' }}>Médecin de Collecte</p><span style={{ fontSize: '12px', color: '#666666' }}>Moteur de recherche de documents & rectification</span></div>
               </div>
               <span style={{ color: '#aaaaaa' }}>➔</span>
             </button>
-          </div>
-        </div>
-      )}
 
-      {space === 'donor_home' && (
-        <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <div style={{ background: '#111111', color: '#ffffff', padding: '24px', borderRadius: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', color: '#666666' }}>Compte Donneur</p>
-                <h3 style={{ margin: '4px 0 0 0', fontSize: '15px', fontWeight: '600' }}>guerlency.mic13@charleroi.be</h3>
-                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#888888' }}>5 dons validés à l'ETS</p>
-              </div>
-              <div style={{ background: '#222222', padding: '8px 14px', borderRadius: '12px', fontSize: '18px', fontWeight: '700', color: '#ff4d4d' }}>O+</div>
-            </div>
-          </div>
-
-          <div style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '20px', border: '1px solid #e5e5e5' }}>
-            <button onClick={() => setSpace('test')} style={{ width: '100%', backgroundColor: '#111111', color: '#ffffff', padding: '12px', border: 'none', borderRadius: '12px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
-              PASSER LE TEST D'ÉLIGIBILITÉ
-            </button>
-          </div>
-        </div>
-      )}
-
-      {space === 'test' && !code && (
-        <div style={{ width: '100%', maxWidth: '400px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '20px', border: '1px solid #e5e5e5', boxSizing: 'border-box' }}>
-          {qIdx < questions.length ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#111111', margin: 0 }}>{questions[qIdx]}</p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setAns('OUI')} style={{ flex: 1, padding: '12px', border: ans === 'OUI' ? '1.5px solid #111111' : '1px solid #e5e5e5', borderRadius: '12px', backgroundColor: ans === 'OUI' ? '#f5f5f7' : '#ffffff' }}>Oui</button>
-                <button onClick={() => setAns('NON')} style={{ flex: 1, padding: '12px', border: ans === 'NON' ? '1.5px solid #111111' : '1px solid #e5e5e5', backgroundColor: ans === 'NON' ? '#f5f5f7' : '#ffffff', borderRadius: '12px' }}>Non</button>
-              </div>
-              <button onClick={handleNextQuestion} disabled={!ans} style={{ width: '100%', padding: '12px', backgroundColor: ans ? '#111111' : '#e5e5e5', color: '#fff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>Suivant ➔</button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <h3 style={{ fontSize: '16px', margin: 0 }}>Signature</h3>
-              <input type="text" placeholder="Prénom et Nom" value={sig} onChange={e => setSig(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} />
-              <button onClick={handleFinalizeTest} disabled={!sig.trim()} style={{ width: '100%', padding: '12px', backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '12px', cursor: 'pointer' }}>GÉNÉRER MON CODE</button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {code && (
-        <div style={{ width: '100%', maxWidth: '400px', backgroundColor: '#ffffff', padding: '28px 20px', borderRadius: '20px', border: '1px solid #e5e5e5', textAlign: 'center' }}>
-          <h3 style={{ fontSize: '16px', margin: '0 0 4px 0' }}>Code Entretien Clinique</h3>
-          <div style={{ backgroundColor: '#111111', color: '#ffffff', fontSize: '26px', padding: '14px', borderRadius: '12px', fontFamily: 'monospace', letterSpacing: '4px' }}>{code}</div>
-        </div>
-      )}
-
-      {space === 'doctor_panel' && (
-        <div style={{ width: '100%', maxWidth: '400px', backgroundColor: '#ffffff', padding: '20px', borderRadius: '20px', border: '1px solid #e5e5e5' }}>
-          <h3 style={{ fontSize: '16px', margin: '0 0 12px 0' }}>Espace Médecin Référent</h3>
-          <input placeholder="Code donneur à 6 chiffres" value={currentMedicalCode} onChange={e => setCurrentMedicalCode(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', textAlign: 'center', marginBottom: '10px', boxSizing: 'border-box' }} />
+            <button onClick={() => setSpace('admin')} style={{ width: '100%', backgroundColor: '#ffffff', padding: '18px', border: '1px solid #e5e5e5', borderRadius: '20px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', textAlign: 'left' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
